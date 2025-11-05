@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>z.com</title>
+    <link rel="stylesheet" href="styles.css">
+    <meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Cache-Control" content="no-cache"> 
+</head>
+<body>
+    <!-- ログイン画面オーバーレイ -->
+    <div id="login-overlay">
+        <div class="login-container">
+            <h1>z</h1>
+            <p>メールアドレスでログイン</p>
+            
+            <div id="email-input-section">
+                <input type="email" id="email-input" placeholder="メールアドレスを入力" />
+                <button id="send-link-btn" class="auth-btn">ログインリンクを送信</button>
+                <p class="login-note">※ g.kumamoto-nct.ac.jp ドメインのメールアドレスのみ利用可能です</p>
+            </div>
+            
+            <div id="link-sent-message" style="display: none;">
+                <p class="success-message">✓ ログイン処理中</p>
+                <p>メールをご確認の上、リンクをクリックしてログインしてください。</p>
+                <p class="login-note">メールが届かない場合は、迷惑メールフォルダもご確認ください。</p>
+            </div>
+            
+            <div id="loading-message" style="display: none;">
+                <p>処理中...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <div id="main-content">
+        <header id="header" >
+            <div class="hleft"></div>
+            <h1>z</h1>
+            <div class="hright">
+                <div onclick="signOut()" class="signout-btn">
+                    <img src="svg/logout_white.svg" alt="Logout" />
+                </div>
+            </div>
+        </header>
+        <div class="tweet">
+            <div class="tweetbox id-1">
+                <img src="svg/kkrn_icon_user_1.svg" alt="">
+                <div class="tweetright">
+                    <div class="rtop">
+                        <p class="username">テストユーザー</p>
+                        <p class="timestamp">0秒前</p>
+                    </div>
+                    <div class="rbottom">
+                        <p class="content">これはテストツイートです。こんにちは、世界！</p>
+                        <div class="iine" data-tweet-id="1">
+                            <p class="iine-icon">♡</p>
+                            <p class="iine-num">0</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+
+        </div>
+        <div class="tweetreload" onclick="loadTweets()">
+            <img src="svg/reload_icon.svg" alt="">
+        </div>
+        <div class="newtweet" onclick="newtweet()">
+            <p>+</p>
+        </div>
+
+        <div class="tweeting-area" id="tweeting-area" style="display: none;">
+            <div class="tweeting-top">
+                <div onclick="cancelTweet()" class="cancel-btn"><p>キャンセル</p></div>
+                <div class="send-tweet-btn" id="send-tweet-btn"><p>ツイートする</p></div>
+            </div>
+            
+            <div class="tweeting-bottom">
+                <img src="svg/kkrn_icon_user_1.svg" alt="User Icon" class="user-icon"/>
+                <textarea id="tweet-input" placeholder="いまどうしてる？"></textarea>
+            </div>
+
+        </div>
+    </div>
+    <script src="config.js"></script>
+    <script src="https://auth.magic.link/sdk"></script>
+    <script type="module">
+        // Magic.link の初期化
+        const magic = new Magic(window.APP_CONFIG.MAGIC_PUBLISHABLE_KEY);
+        
+        // magicをグローバルに設定
+        window.magic = magic;
+    </script>
+    <script src="database.js"></script>
+    <script src="font.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="auth.js"></script>
+    <script src="header.js"></script>
+</body>
+</html>
+

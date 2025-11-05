@@ -1,0 +1,10 @@
+// config.js - フロントエンド用設定ファイル
+// このファイルをコピーして config.js を作成し、実際の値を設定してください
+
+window.APP_CONFIG = {
+    // APIサーバーのベースURL
+    API_BASE_URL: 'http://localhost:3000',
+    
+    // Magic.link Publishable Key
+    MAGIC_PUBLISHABLE_KEY: 'your_magic_publishable_key_here'
+};
