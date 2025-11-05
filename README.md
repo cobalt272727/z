@@ -79,37 +79,39 @@ window.APP_CONFIG = {
 ```sql
 -- ユーザーテーブル
 CREATE TABLE userlist (
-    email VARCHAR(255) PRIMARY KEY,
-    name VARCHAR(100),
-    icon INTEGER,
-    ban BOOLEAN DEFAULT FALSE
+    id SERIAL PRIMARY KEY NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    icon SMALLINT DEFAULT 1 NOT NULL,
+    ban BOOLEAN DEFAULT FALSE NOT NULL
 );
 
 -- ツイートテーブル
 CREATE TABLE tweetlist (
-    id SERIAL PRIMARY KEY,
-    icon INTEGER,
-    name VARCHAR(100),
-    message TEXT,
-    time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    iine INTEGER DEFAULT 0
+    id SERIAL PRIMARY KEY NOT NULL,
+    icon SMALLINT DEFAULT 1  NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    message TEXT NOT NULL,
+    time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    iine SMALLINT DEFAULT 0 NOT NULL
 );
 
 -- いいねテーブル
 CREATE TABLE iinelist (
-    tweet_id INTEGER,
-    user_email VARCHAR(255),
-    PRIMARY KEY (tweet_id, user_email)
+    id SERIAL PRIMARY KEY NOT NULL,
+    tweet_id INTEGER NOT NULL,
+    user_email VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 -- 不適切コンテンツログテーブル
 CREATE TABLE inappropriate_content_log (
-    id SERIAL PRIMARY KEY,
-    user_name VARCHAR(100),
-    user_email VARCHAR(255),
-    content TEXT,
-    detected_categories JSONB,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY NOT NULL,
+    user_name VARCHAR(100) NOT NULL,
+    user_email VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    detected_categories JSONB NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 ```
 
