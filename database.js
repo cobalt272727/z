@@ -3,11 +3,14 @@ function newtweet() {
     header.style.display = 'none';
     const tweetingArea = document.getElementById('tweeting-area');
     tweetingArea.style.display = 'block';
+        document.getElementById('tweet').style.display = 'none';
+    document.getElementById('tweet-input').focus();
 }
 function cancelTweet() {
     const header = document.getElementById('header');
     header.style.display = 'flex';
     const tweetingArea = document.getElementById('tweeting-area');
+    document.getElementById('tweet').style.display = 'block';
     tweetingArea.style.display = 'none';
     document.getElementById('tweet-input').value = '';
 }
