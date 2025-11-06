@@ -33,6 +33,7 @@ app.use(cors({
     // 許可するオリジンのリスト
     const allowedOrigins = [
       'http://localhost:3000',
+      'http://localhost:5500',
       'https://z.mcs12.net'
     ];
     
@@ -47,23 +48,37 @@ app.use(cors({
 
 app.use(express.json());
 
-// Magic.linkトークン検証ミドルウェア（オプション）
+// Magic.linkトークン検証ミドルウェア
 async function verifyMagicToken(req, res, next) {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+    // AuthorizationヘッダーまたはリクエストボディからDIDトークンを取得
+    let didToken = req.headers.authorization?.replace('Bearer ', '');
     
-    if (!token) {
+    if (!didToken && req.body?.didToken) {
+      didToken = req.body.didToken;
+    }
+    
+    if (!didToken) {
       return res.status(401).json({ status: "error", message: "認証トークンがありません" });
     }
     
-    const metadata = await magic.users.getMetadataByToken(token);
+    // Magic Link SDKでトークンを検証
+    magic.token.validate(didToken);
+    const metadata = await magic.users.getMetadataByToken(didToken);
+    
+    if (!metadata.email) {
+      return res.status(401).json({ status: "error", message: "メールアドレスが取得できません" });
+    }
     
     // ドメインチェック
     if (!metadata.email.endsWith('@g.kumamoto-nct.ac.jp')) {
       return res.status(403).json({ status: "error", message: "許可されていないドメインです" });
     }
     
+    // リクエストオブジェクトにユーザー情報を追加
     req.userEmail = metadata.email;
+    req.userMetadata = metadata;
+    
     next();
   } catch (error) {
     console.error("トークン検証エラー:", error);
@@ -162,8 +177,9 @@ async function checkContentSafety(text) {
 }
 
 // ユーザーを登録するAPI
-app.post("/register-user", async (req, res) => {
-  const { email } = req.body;
+app.post("/register-user", verifyMagicToken, async (req, res) => {
+  // 認証済みのメールアドレスを使用
+  const email = req.userEmail;
 
   try {
     // メールアドレスが既に存在するかチェック
@@ -192,24 +208,9 @@ app.post("/register-user", async (req, res) => {
 });
 
 // ツイート一覧を取得するAPI
-app.get("/tweets", async (req, res) => {
-  const { email } = req.query;
-  
-  // メールアドレスが提供されていない場合はエラー
-  if (!email) {
-    return res.status(401).json({ 
-      status: "error", 
-      message: "ログインが必要です" 
-    });
-  }
-  
-  // ドメインチェック
-  if (!email.endsWith('@g.kumamoto-nct.ac.jp')) {
-    return res.status(403).json({ 
-      status: "error", 
-      message: "許可されていないドメインです" 
-    });
-  }
+app.get("/tweets", verifyMagicToken, async (req, res) => {
+  // 認証済みのメールアドレスを使用
+  const email = req.userEmail;
   
   try {
     const result = await pool.query(
@@ -235,9 +236,11 @@ app.get("/tweets", async (req, res) => {
 });
 
 // メッセージを保存するAPI
-app.post("/save", async (req, res) => {
-  const { message, email } = req.body;
-
+app.post("/save", verifyMagicToken, async (req, res) => {
+  const { message } = req.body;
+  // 認証済みのメールアドレスを使用
+  const email = req.userEmail;
+  
   try {
     // メールアドレスからuserlistのnameとiconを取得
     const userResult = await pool.query(
@@ -348,9 +351,11 @@ app.post("/save", async (req, res) => {
 });
 
 // いいねを保存するAPI
-app.post("/iine", async (req, res) => {
-  const { id, email } = req.body;
-
+app.post("/iine", verifyMagicToken, async (req, res) => {
+  const { id } = req.body;
+  // 認証済みのメールアドレスを使用
+  const email = req.userEmail;
+  
   try {
     // 既にいいねしているかチェック
     const checkResult = await pool.query(

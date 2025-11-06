@@ -60,10 +60,14 @@ async function sendLoginLink() {
 // ユーザーをデータベースに登録
 async function registerUserToDatabase(email) {
     try {
+        // DIDトークンを取得
+        const didToken = await window.magic.user.getIdToken();
+        
         const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/register-user`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${didToken}`
             },
             body: JSON.stringify({ email })
         });
@@ -158,7 +162,15 @@ async function loadTweets() {
         const metadata = await window.magic.user.getInfo();
         const email = metadata.email;
         
-        const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/tweets?email=${encodeURIComponent(email)}`);
+        // DIDトークンを取得
+        const didToken = await window.magic.user.getIdToken();
+        
+        const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/tweets`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${didToken}`
+            }
+        });
         const result = await response.json();
         
         if (result.status === "success") {
@@ -197,7 +209,10 @@ async function loadTweets() {
                 
                 tweetContainer.appendChild(tweetBox);
             });
-            
+              window.scroll({ 
+            top: 0, 
+            behavior: "smooth"
+            });
             console.log('ツイートを読み込みました:', result.tweets.length + '件');
         } else {
             console.error('ツイート取得エラー:', result);

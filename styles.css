@@ -336,3 +336,63 @@ textarea {
     width: 100%;
     height: calc(100% - 50px);
 }
+
+/* 文字数カウンター */
+.char-counter {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 10px 15px;
+    border-radius: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.char-count {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    min-width: 50px;
+}
+
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+.progress-ring-circle-bg {
+    transition: stroke 0.3s ease;
+}
+
+.progress-ring-circle {
+    stroke-dasharray: 100.53 100.53;
+    stroke-dashoffset: 100.53;
+    transition: stroke-dashoffset 0.3s ease, stroke 0.3s ease;
+}
+
+/* スマホ表示時の調整 */
+@media (max-width: 768px) {
+    .char-counter {
+        bottom: calc(env(safe-area-inset-bottom) + 20px);
+    }
+}
+
+/* 文字数が上限に近づいた時の警告色 */
+.char-counter.warning .char-count {
+    color: #ff9800;
+}
+
+.char-counter.warning .progress-ring-circle {
+    stroke: #ff9800;
+}
+
+.char-counter.danger .char-count {
+    color: #f44336;
+}
+
+.char-counter.danger .progress-ring-circle {
+    stroke: #f44336;
+}
