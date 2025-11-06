@@ -4,6 +4,8 @@ function newtweet() {
     const tweetingArea = document.getElementById('tweeting-area');
     tweetingArea.style.display = 'block';
         document.getElementById('tweet').style.display = 'none';
+        document.getElementById('tweetreload').style.display = 'none';
+        document.getElementById('newtweet').style.display = 'none';
     document.getElementById('tweet-input').focus();
 }
 function cancelTweet() {
@@ -11,6 +13,8 @@ function cancelTweet() {
     header.style.display = 'flex';
     const tweetingArea = document.getElementById('tweeting-area');
     document.getElementById('tweet').style.display = 'block';
+            document.getElementById('tweetreload').style.display = 'flex';
+        document.getElementById('newtweet').style.display = 'block';
     tweetingArea.style.display = 'none';
     document.getElementById('tweet-input').value = '';
 }

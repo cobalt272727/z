@@ -65,10 +65,10 @@
 
 
         </div>
-        <div class="tweetreload" onclick="loadTweets()">
+        <div class="tweetreload" id="tweetreload" onclick="loadTweets()">
             <img src="svg/reload_icon.svg" alt="">
         </div>
-        <div class="newtweet" onclick="newtweet()">
+        <div class="newtweet" id="newtweet" onclick="newtweet()">
             <p>+</p>
         </div>
 
@@ -80,7 +80,7 @@
             
             <div class="tweeting-bottom">
                 <img src="svg/kkrn_icon_user_1.svg" alt="User Icon" class="user-icon"/>
-                <textarea id="tweet-input" placeholder="いまどうしてる？"></textarea>
+                <textarea id="tweet-input" placeholder="いまどうしてる？" maxlength="100"></textarea>
             </div>
 
         </div>
@@ -89,7 +89,7 @@
     <script src="https://auth.magic.link/sdk"></script>
     <script type="module">
         // Magic.link の初期化
-        const magic = new Magic(window.APP_CONFIG.MAGIC_PUBLISHABLE_KEY);
+        const magic = new Magic(window.APP_CONFIG.MAGIC_PUBLISHABLE_KEY, { locale: "ja" });
         
         // magicをグローバルに設定
         window.magic = magic;
