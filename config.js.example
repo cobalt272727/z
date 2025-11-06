@@ -9,5 +9,7 @@ window.APP_CONFIG = {
     MAGIC_PUBLISHABLE_KEY: 'your_magic_publishable_key_here',
     
     // WebSocketサーバーのURL (display.html用)
+    // ローカル環境: 'ws://localhost:3001'
+    // 本番環境(HTTPS): 'wss://your-domain.com:3001' または 'ws://your-domain.com:3001' (自動的にwss://に変換されます)
     WS_SERVER_URL: 'ws://localhost:3001'
 };

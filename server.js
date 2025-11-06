@@ -21,7 +21,30 @@ const __dirname = path.dirname(__filename);
 const magic = new Magic(process.env.MAGIC_SECRET_KEY);
 
 const app = express();
-app.use(cors());
+
+// CORS設定 - 同一オリジンのみ許可（クロスドメイン非対応）
+app.use(cors({
+  origin: function (origin, callback) {
+    // originがundefinedの場合は同一オリジンからのリクエスト
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // 許可するオリジンのリスト
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://z.mcs12.net'
+    ];
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS policy: このオリジンからのアクセスは許可されていません'));
+    }
+  },
+  credentials: true
+}));
+
 app.use(express.json());
 
 // Magic.linkトークン検証ミドルウェア（オプション）
@@ -172,21 +195,33 @@ app.post("/register-user", async (req, res) => {
 app.get("/tweets", async (req, res) => {
   const { email } = req.query;
   
+  // メールアドレスが提供されていない場合はエラー
+  if (!email) {
+    return res.status(401).json({ 
+      status: "error", 
+      message: "ログインが必要です" 
+    });
+  }
+  
+  // ドメインチェック
+  if (!email.endsWith('@g.kumamoto-nct.ac.jp')) {
+    return res.status(403).json({ 
+      status: "error", 
+      message: "許可されていないドメインです" 
+    });
+  }
+  
   try {
     const result = await pool.query(
       "SELECT id, icon, name, message, time, iine FROM tweetlist ORDER BY id DESC LIMIT 100"
     );
     
-    let likedTweetIds = [];
-    
     // ログイン中のユーザーがいいねしたツイートIDを取得
-    if (email) {
-      const likedResult = await pool.query(
-        "SELECT tweet_id FROM iinelist WHERE user_email = $1",
-        [email]
-      );
-      likedTweetIds = likedResult.rows.map(row => row.tweet_id);
-    }
+    const likedResult = await pool.query(
+      "SELECT tweet_id FROM iinelist WHERE user_email = $1",
+      [email]
+    );
+    const likedTweetIds = likedResult.rows.map(row => row.tweet_id);
     
     res.json({ 
       status: "success", 

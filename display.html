@@ -32,19 +32,19 @@
         .message {
             position: absolute;
             white-space: nowrap;
-            font-size: 48px;
+            font-size: 80px;
             font-weight: bold;
             padding: 20px;
-            animation: scroll-left 15s linear;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            /* アニメーションは動的に設定 */
         }
 
         @keyframes scroll-left {
             from {
-                left: 100%;
+                transform: translateX(100vw);
             }
             to {
-                left: -100%;
+                transform: translateX(-100%);
             }
         }
 
@@ -76,8 +76,14 @@
         const messageContainer = document.getElementById('message-container');
         const statusElement = document.getElementById('status');
         
-        // WebSocket接続先をconfig.jsから取得
-        const WS_SERVER = window.APP_CONFIG?.WS_SERVER_URL || 'ws://localhost:3001';
+        // WebSocket接続先をconfig.jsから取得し、HTTPSの場合は自動的にwss://に変換
+        let WS_SERVER = window.APP_CONFIG?.WS_SERVER_URL || 'ws://localhost:3001';
+        
+        // HTTPSページからアクセスしている場合、ws://をwss://に変換
+        if (window.location.protocol === 'https:' && WS_SERVER.startsWith('ws://')) {
+            WS_SERVER = WS_SERVER.replace('ws://', 'wss://');
+        }
+        
         console.log('WebSocket接続先:', WS_SERVER);
         const ws = new WebSocket(WS_SERVER);
         
@@ -129,16 +135,35 @@
             // ランダムな高さに配置（複数メッセージが重ならないように）
             const randomTop = Math.random() * (window.innerHeight - 100);
             messageElement.style.top = `${randomTop}px`;
-            
-
             messageElement.style.color = '#ffffff';
             
+            // 一時的に要素を追加してテキストの幅を測定
+            messageElement.style.visibility = 'hidden';
             messageContainer.appendChild(messageElement);
+            
+            // テキストの実際の幅を取得
+            const textWidth = messageElement.offsetWidth;
+            const screenWidth = window.innerWidth;
+            
+            // アニメーション時間を計算（テキスト幅 + 画面幅を移動する時間）
+            // 基本速度: 400px/秒
+            const speed = 400; // ピクセル/秒
+            const totalDistance = screenWidth + textWidth;
+            const duration = totalDistance / speed;
+            
+            // 最小15秒、最大60秒に制限
+            const finalDuration = Math.max(15, Math.min(60, duration));
+            
+            // アニメーションを設定
+            messageElement.style.animation = `scroll-left ${finalDuration}s linear`;
+            messageElement.style.visibility = 'visible';
             
             // アニメーション終了後に要素を削除
             messageElement.addEventListener('animationend', () => {
                 messageElement.remove();
             });
+            
+            console.log(`メッセージ長: ${message.length}文字, 幅: ${textWidth}px, アニメーション時間: ${finalDuration.toFixed(1)}秒`);
         }
         
         // テスト用：3秒後にテストメッセージを表示（開発時のみ）

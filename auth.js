@@ -147,12 +147,16 @@ async function loadTweets() {
     try {
         // ログイン中のユーザーのメールアドレスを取得
         const isLoggedIn = await window.magic.user.isLoggedIn();
-        let email = '';
         
-        if (isLoggedIn) {
-            const metadata = await window.magic.user.getInfo();
-            email = metadata.email;
+        // ログインしていない場合は処理を中断
+        if (!isLoggedIn) {
+            console.log('ログインが必要です');
+            showLoginScreen();
+            return;
         }
+        
+        const metadata = await window.magic.user.getInfo();
+        const email = metadata.email;
         
         const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/tweets?email=${encodeURIComponent(email)}`);
         const result = await response.json();
