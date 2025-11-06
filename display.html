@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>z - メッセージ表示</title>
+    <script src="config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Yu Gothic', 'Meiryo', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .message {
+            position: absolute;
+            white-space: nowrap;
+            font-size: 48px;
+            font-weight: bold;
+            padding: 20px;
+            animation: scroll-left 15s linear;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        @keyframes scroll-left {
+            from {
+                left: 100%;
+            }
+            to {
+                left: -100%;
+            }
+        }
+
+        .status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+            color: #666;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .status.connected {
+            color: #0f0;
+        }
+
+        .status.disconnected {
+            color: #f00;
+        }
+    </style>
+</head>
+<body>
+    <div class="message-container" id="message-container"></div>
+    <div class="status" id="status">接続中...</div>
+
+    <script>
+        const messageContainer = document.getElementById('message-container');
+        const statusElement = document.getElementById('status');
+        
+        // WebSocket接続先をconfig.jsから取得
+        const WS_SERVER = window.APP_CONFIG?.WS_SERVER_URL || 'ws://localhost:3001';
+        console.log('WebSocket接続先:', WS_SERVER);
+        const ws = new WebSocket(WS_SERVER);
+        
+        ws.onopen = () => {
+            console.log('WebSocketに接続しました');
+            statusElement.textContent = '接続済み';
+            statusElement.classList.add('connected');
+            statusElement.classList.remove('disconnected');
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 3000);
+        };
+        
+        ws.onclose = () => {
+            console.log('WebSocketが切断されました');
+            statusElement.textContent = '切断';
+            statusElement.classList.add('disconnected');
+            statusElement.classList.remove('connected');
+
+            
+            // 3秒後に再接続を試みる
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        };
+        
+        ws.onerror = (error) => {
+            console.error('WebSocketエラー:', error);
+            statusElement.textContent = 'エラー';
+            statusElement.classList.add('disconnected');
+        };
+        
+        // メッセージを受信したときの処理
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                displayMessage(data.name, data.message);
+            } catch (error) {
+                console.error('メッセージのパースエラー:', error);
+            }
+        };
+        
+        // メッセージを表示する関数
+        function displayMessage(name, message) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message';
+            messageElement.textContent = `${message}`;
+            
+            // ランダムな高さに配置（複数メッセージが重ならないように）
+            const randomTop = Math.random() * (window.innerHeight - 100);
+            messageElement.style.top = `${randomTop}px`;
+            
+
+            messageElement.style.color = '#ffffff';
+            
+            messageContainer.appendChild(messageElement);
+            
+            // アニメーション終了後に要素を削除
+            messageElement.addEventListener('animationend', () => {
+                messageElement.remove();
+            });
+        }
+        
+        // テスト用：3秒後にテストメッセージを表示（開発時のみ）
+        // setTimeout(() => {
+        //     displayMessage('テストユーザー', 'これはテストメッセージです');
+        // }, 3000);
+    </script>
+</body>
+</html>
