@@ -191,7 +191,7 @@ async function loadTweets() {
                 const iineColor = isLiked ? 'rgb(216, 65, 126)' : '';
                 
                 tweetBox.innerHTML = `
-                    <img src="svg/kkrn_icon_user_${tweet.icon}.svg" alt="">
+                    <img class="tweeticon" src="svg/kkrn_icon_user_${tweet.icon}.svg" alt="">
                     <div class="tweetright">
                         <div class="rtop">
                             <p class="username">${escapeHtml(tweet.name)}</p>

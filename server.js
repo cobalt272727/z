@@ -396,6 +396,87 @@ app.post("/iine", verifyMagicToken, async (req, res) => {
   }
 });
 
+// 自分のツイート一覧を取得するAPI
+app.get("/my-tweets", verifyMagicToken, async (req, res) => {
+  const email = req.userEmail;
+  
+  try {
+    const result = await pool.query(
+      "SELECT id, icon, name, message, time, iine FROM tweetlist WHERE name = (SELECT name FROM userlist WHERE email = $1) ORDER BY id DESC",
+      [email]
+    );
+    
+    res.json({ 
+      status: "success", 
+      tweets: result.rows
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ status: "error", message: "エラーが発生しました" });
+  }
+});
+
+// いいねしたユーザー一覧を取得するAPI
+app.get("/iine-users/:tweetId", verifyMagicToken, async (req, res) => {
+  const { tweetId } = req.params;
+  
+  try {
+    const result = await pool.query(
+      `SELECT u.name, u.icon 
+       FROM iinelist i 
+       JOIN userlist u ON i.user_email = u.email 
+       WHERE i.tweet_id = $1 
+       ORDER BY i.id DESC`,
+      [tweetId]
+    );
+    
+    res.json({ 
+      status: "success", 
+      users: result.rows
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ status: "error", message: "エラーが発生しました" });
+  }
+});
+
+// ツイートを削除するAPI
+app.delete("/tweets/:id", verifyMagicToken, async (req, res) => {
+  const { id } = req.params;
+  const email = req.userEmail;
+  
+  try {
+    // 自分のツイートかチェック
+    const tweetResult = await pool.query(
+      "SELECT * FROM tweetlist WHERE id = $1 AND name = (SELECT name FROM userlist WHERE email = $2)",
+      [id, email]
+    );
+    
+    if (tweetResult.rows.length === 0) {
+      return res.status(403).json({ status: "error", message: "このツイートを削除する権限がありません" });
+    }
+    
+    const tweet = tweetResult.rows[0];
+    
+    // 削除前にdeleted_tweetテーブルに保存
+    await pool.query(
+      "INSERT INTO deleted_tweet (original_tweet_id, icon, name, message, original_time, deleted_by) VALUES ($1, $2, $3, $4, $5, $6)",
+      [tweet.id, tweet.icon, tweet.name, tweet.message, tweet.time, email]
+    );
+    
+    // いいねを削除
+    await pool.query("DELETE FROM iinelist WHERE tweet_id = $1", [id]);
+    
+    // ツイートを削除
+    await pool.query("DELETE FROM tweetlist WHERE id = $1", [id]);
+    
+    res.json({ status: "success", message: "ツイートを削除しました" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ status: "error", message: "エラーが発生しました" });
+  }
+});
+
 // サーバー起動
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

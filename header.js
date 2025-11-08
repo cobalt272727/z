@@ -2,6 +2,11 @@ $(function() {
 	var headerHeight = $('header').outerHeight(),
 		startPos = 0;
 	$(window).on('load scroll', function() {
+		// ヘッダーが非表示の場合はtranslateYを適用しない
+		if ($('header').css('display') === 'none') {
+			return;
+		}
+		
 		var scrollPos = $(this).scrollTop();
 		if ( scrollPos > startPos && scrollPos > headerHeight ) {
 			$('header').css('transform', 'translateY(-100%)');

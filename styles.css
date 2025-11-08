@@ -119,10 +119,13 @@ header {
     padding-right: 1em;
 }
 .hleft {
-    width: calc(20% - 1em);
+    width: calc(25% - 1em);
 }
 .hright {
-    width: calc(20% - 1em);
+    width: calc(25% - 1em);
+    height: 36px;
+    display: flex;
+    align-items: center;
 }
 .signout-btn {
     background-color: #606060;
@@ -143,6 +146,17 @@ header {
     height: 80%;
     margin: 0 auto;
 }
+.myicon {
+    height: 36px;
+    display: flex;
+    align-items: center;
+
+}
+.myicon img {
+    width: 35px;
+    height: 35px;
+
+}
 
 .signout-btn:hover {
     background-color: #b2b2b2;
@@ -152,7 +166,7 @@ h1 {
     margin: 0 auto;
     font-size: 1.5em;
     text-align: center;
-    width: 60%;
+    width: 50%;
 }
 .tweet {
     display: block;
@@ -172,10 +186,9 @@ h1 {
     border-bottom-width: 1px;
     border-bottom-color: rgb(239, 243, 244);
 }
-.tweetbox img {
+.tweeticon {
     width: 50px;
     height: 50px;
-    border-radius: 50%;
     margin: 10px;
 }
 .tweetright {
@@ -233,6 +246,27 @@ h1 {
     left: 50%;
     transform: translateX(-50%);
 }
+.delete {
+    margin:  0;
+    position:relative;
+    margin-top: 0;
+}
+.delete-icon {
+    width: 30px;
+    height: 30px;
+    margin: 0;
+}
+.delete-message {
+    font-size: 10px;
+    color: gray;
+    margin: 0 auto;
+    text-align: center;
+}
+.iine-count {
+    font-size: 14px;
+    color: gray;
+    margin: 0;
+}
 .username {
     font-weight: 700;
     margin: 5px 0 0px 0;
@@ -279,14 +313,15 @@ h1 {
 .tweeting-area {
     display: block;
     flex-direction: column;
-    position: absolute;
+    position: fixed;
     width: calc(100% - 20px);
-    height: 100%;
+    height: calc(100vh - 20px);
     top: 0;
     left: 0;
     background-color: #ffffff;
     padding: 10px;
     box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    z-index: 1000;
 }
 
 .tweeting-top {
@@ -395,4 +430,141 @@ textarea {
 
 .char-counter.danger .progress-ring-circle {
     stroke: #f44336;
+}
+
+.mypage {
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    background-color: #ffffff;
+    padding: 0;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.mypage-header {
+    position: sticky;
+    top: 0;
+    background-color: #fff;
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    z-index: 10;
+}
+
+.mypage-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.mypage-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+}
+
+.mypage-username {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin: 0;
+}
+
+.mypage-close {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #333;
+}
+
+.mypage-tweets {
+    padding: 0;
+}
+
+.iinelist {
+    margin-top: 5px;
+    padding: 5px 0;
+    border-top: 1px solid #f0f0f0;
+}
+
+.iine-count {
+    font-size: 13px;
+    color: #1DA1F2;
+    margin: 5px 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.iine-count:hover {
+    text-decoration: underline;
+}
+
+.iine-users {
+    display: none;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-radius: 5px;
+}
+
+.iine-users.show {
+    display: block;
+}
+
+.iine-user-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    margin: 5px 0;
+    background-color: #fff;
+    border-radius: 5px;
+}
+
+.iine-user-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+}
+
+.iine-user-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.delete {
+    margin: auto 10px;
+    position: relative;
+    margin-top: 0;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.delete:hover .delete-icon {
+    opacity: 0.7;
+}
+
+.delete-icon {
+    width: 25px;
+    height: 25px;
+    margin: 0;
+    transition: opacity 0.2s;
+}
+
+.delete-message {
+    font-size: 10px;
+    color: #f44336;
+    margin: 2px 0 0 0;
+    text-align: center;
 }

@@ -39,14 +39,17 @@
             <div class="hleft"></div>
             <h1>z</h1>
             <div class="hright">
+                <div class="myicon" id="gomypage">
+                    <img src="svg/kkrn_icon_user_1.svg" alt="User Icon" />
+                </div>
                 <div onclick="signOut()" class="signout-btn">
                     <img src="svg/logout_white.svg" alt="Logout" />
                 </div>
             </div>
         </header>
         <div class="tweet" id="tweet">
-            <div class="tweetbox id-1">
-                <img src="svg/kkrn_icon_user_1.svg" alt="">
+            <!-- <div class="tweetbox id-1">
+                <img class="tweeticon" src="svg/kkrn_icon_user_1.svg" alt="">
                 <div class="tweetright">
                     <div class="rtop">
                         <p class="username">テストユーザー</p>
@@ -60,11 +63,10 @@
                         </div>
                     </div>
 
-                </div>
-            </div>
-
-
+                </div> 
+            </div>-->
         </div>
+
         <div class="tweetreload" id="tweetreload" onclick="loadTweets()">
             <img src="svg/reload_icon.svg" alt="">
         </div>
@@ -80,7 +82,7 @@
             
             <div class="tweeting-bottom">
                 <img src="svg/kkrn_icon_user_1.svg" alt="User Icon" class="user-icon"/>
-                <textarea id="tweet-input" placeholder="いまどうしてる?" maxlength="50"></textarea>
+                <textarea id="tweet-input" placeholder="いまどうしてる?" maxlength="100"></textarea>
             </div>
             
             <div class="char-counter" id="char-counter">
@@ -91,6 +93,20 @@
                 <span class="char-count">0/50</span>
             </div>
 
+        </div>
+
+        <div class="mypage" id="mypage" style="display: none;">
+            <div class="mypage-header">
+                <button class="mypage-close" onclick="closeMypage()">←</button>
+                <div class="mypage-profile">
+                    <img id="mypage-icon" src="svg/kkrn_icon_user_1.svg" alt="User Icon" class="mypage-icon"/>
+                    <p id="mypage-username" class="mypage-username">ユーザー名</p>
+                </div>
+            </div>
+            
+            <div class="mypage-tweets" id="mypage-tweets">
+                <!-- 自分のツイートがここに表示される -->
+            </div>
         </div>
     </div>
     <script src="config.js"></script>
@@ -108,6 +124,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="auth.js"></script>
     <script src="header.js"></script>
+    <script src="mypage.js"></script>
 </body>
 </html>
 

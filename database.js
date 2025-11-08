@@ -1,6 +1,10 @@
 function newtweet() {
     const header = document.getElementById('header');
     header.style.display = 'none';
+    // ヘッダーのtransformをリセット
+    header.style.transform = 'translateY(0)';
+    // bodyのpadding-topをリセット（ヘッダー分のスペースを削除）
+    document.body.style.paddingTop = '0';
     const tweetingArea = document.getElementById('tweeting-area');
     tweetingArea.style.display = 'block';
         document.getElementById('tweet').style.display = 'none';
@@ -15,6 +19,10 @@ function newtweet() {
 function cancelTweet() {
     const header = document.getElementById('header');
     header.style.display = 'flex';
+    // ヘッダーのtransformを元に戻す
+    header.style.transform = 'translateY(0)';
+    // bodyのpadding-topを元に戻す
+    document.body.style.paddingTop = '52px';
     const tweetingArea = document.getElementById('tweeting-area');
     document.getElementById('tweet').style.display = 'block';
             document.getElementById('tweetreload').style.display = 'flex';
@@ -32,7 +40,7 @@ function updateCharCount() {
     const charCount = document.querySelector('.char-count');
     const progressCircle = document.querySelector('.progress-ring-circle');
     const counter = document.getElementById('char-counter');
-    const maxLength = 50;
+    const maxLength = 100;
     
     const currentLength = input.value.length;
     const percentage = currentLength / maxLength;
@@ -49,9 +57,9 @@ function updateCharCount() {
     
     // 警告色の設定
     counter.classList.remove('warning', 'danger');
-    if (currentLength >= 45 && currentLength < 50) {
+    if (currentLength >= 80 && currentLength < 90) {
         counter.classList.add('warning');
-    } else if (currentLength >= 50) {
+    } else if (currentLength >= 90) {
         counter.classList.add('danger');
     }
 }
