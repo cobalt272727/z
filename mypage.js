@@ -116,7 +116,7 @@ function closeMypage() {
     // ヘッダーのtransformを元に戻す
     header.style.transform = 'translateY(0)';
     // bodyのpadding-topを元に戻す
-    document.body.style.paddingTop = '52px';
+    document.body.style.paddingTop = '92px';
 }
 
 // 自分のツイートを読み込む

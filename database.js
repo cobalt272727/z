@@ -22,7 +22,7 @@ function cancelTweet() {
     // ヘッダーのtransformを元に戻す
     header.style.transform = 'translateY(0)';
     // bodyのpadding-topを元に戻す
-    document.body.style.paddingTop = '52px';
+    document.body.style.paddingTop = '92px';
     const tweetingArea = document.getElementById('tweeting-area');
     document.getElementById('tweet').style.display = 'block';
             document.getElementById('tweetreload').style.display = 'flex';

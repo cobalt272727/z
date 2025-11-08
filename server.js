@@ -211,11 +211,20 @@ app.post("/register-user", verifyMagicToken, async (req, res) => {
 app.get("/tweets", verifyMagicToken, async (req, res) => {
   // 認証済みのメールアドレスを使用
   const email = req.userEmail;
+  const sortType = req.query.sort || 'toukou'; // デフォルトは投稿順
   
   try {
-    const result = await pool.query(
-      "SELECT id, icon, name, message, time, iine FROM tweetlist ORDER BY id DESC LIMIT 100"
-    );
+    // ソートタイプに応じてクエリを変更
+    let query;
+    if (sortType === 'likes') {
+      // いいね順（降順）、いいね数が同じ場合は新しい順
+      query = "SELECT id, icon, name, message, time, iine FROM tweetlist ORDER BY iine DESC, id DESC LIMIT 100";
+    } else {
+      // 投稿順（デフォルト）
+      query = "SELECT id, icon, name, message, time, iine FROM tweetlist ORDER BY id DESC LIMIT 100";
+    }
+    
+    const result = await pool.query(query);
     
     // ログイン中のユーザーがいいねしたツイートIDを取得
     const likedResult = await pool.query(

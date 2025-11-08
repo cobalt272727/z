@@ -146,8 +146,11 @@ function showLoginScreen() {
     document.getElementById('loading-message').style.display = 'none';
 }
 
+// 現在のソート状態を保持
+let currentSort = 'toukou'; // デフォルトは投稿順
+
 // ツイートをデータベースから取得して表示
-async function loadTweets() {
+async function loadTweets(sortType = currentSort) {
     try {
         // ログイン中のユーザーのメールアドレスを取得
         const isLoggedIn = await window.magic.user.isLoggedIn();
@@ -165,7 +168,9 @@ async function loadTweets() {
         // DIDトークンを取得
         const didToken = await window.magic.user.getIdToken();
         
-        const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/tweets`, {
+        // ソートパラメータをクエリストリングに追加
+        const sortParam = sortType === 'likes' ? '?sort=likes' : '?sort=toukou';
+        const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/tweets${sortParam}`, {
             method: "GET",
             headers: {
                 "Authorization": `Bearer ${didToken}`
@@ -180,8 +185,14 @@ async function loadTweets() {
             
             const likedTweetIds = result.likedTweetIds || [];
             
+            // サーバー側で既にソート済みなので、そのまま使用
+            let tweets = result.tweets;
+            
+            // 現在のソート状態を保存
+            currentSort = sortType;
+            
             // 各ツイートを表示
-            result.tweets.forEach(tweet => {
+            tweets.forEach(tweet => {
                 const tweetBox = document.createElement('div');
                 tweetBox.className = `tweetbox id-${tweet.id}`;
                 
@@ -299,6 +310,30 @@ window.addEventListener('load', async function() {
             if (e.key === 'Enter') {
                 sendLoginLink();
             }
+        });
+    }
+    
+    // ソート切り替えのイベントリスナー
+    const toukouBtn = document.getElementById('toukou');
+    const likesBtn = document.getElementById('likes');
+    
+    if (toukouBtn) {
+        toukouBtn.addEventListener('click', function() {
+            // アクティブ状態を切り替え
+            toukouBtn.classList.add('active');
+            likesBtn.classList.remove('active');
+            // 投稿順で読み込み
+            loadTweets('toukou');
+        });
+    }
+    
+    if (likesBtn) {
+        likesBtn.addEventListener('click', function() {
+            // アクティブ状態を切り替え
+            likesBtn.classList.add('active');
+            toukouBtn.classList.remove('active');
+            // いいね順で読み込み
+            loadTweets('likes');
         });
     }
 });
