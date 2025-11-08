@@ -45,21 +45,9 @@ async function openMypage() {
         const metadata = await window.magic.user.getInfo();
         const email = metadata.email;
         
-        // ユーザー情報を取得
-        const userResponse = await fetch(`${window.APP_CONFIG.API_BASE_URL}/register-user`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${await window.magic.user.getIdToken()}`
-            },
-            body: JSON.stringify({})
-        });
-        
-        const userResult = await userResponse.json();
         let icon = 1;
         let name = email.split('@')[0];
         
-        if (userResult.status === "success" || userResult.status === "already_exists") {
             // ユーザーリストから情報を取得
             const didToken = await window.magic.user.getIdToken();
             const tweetsResponse = await fetch(`${window.APP_CONFIG.API_BASE_URL}/my-tweets`, {
@@ -74,7 +62,7 @@ async function openMypage() {
                 icon = tweetsResult.tweets[0].icon;
                 name = tweetsResult.tweets[0].name;
             }
-        }
+        
         
         // マイページのユーザー情報を更新
         document.getElementById('mypage-icon').src = `svg/kkrn_icon_user_${icon}.svg`;
@@ -112,7 +100,7 @@ function closeMypage() {
     document.getElementById('tweetreload').style.display = 'flex';
     document.getElementById('newtweet').style.display = 'block';
     const header = document.getElementById('header');
-    header.style.display = 'flex';
+    header.style.display = 'block';
     // ヘッダーのtransformを元に戻す
     header.style.transform = 'translateY(0)';
     // bodyのpadding-topを元に戻す

@@ -18,7 +18,7 @@ function newtweet() {
 }
 function cancelTweet() {
     const header = document.getElementById('header');
-    header.style.display = 'flex';
+    header.style.display = 'block';
     // ヘッダーのtransformを元に戻す
     header.style.transform = 'translateY(0)';
     // bodyのpadding-topを元に戻す
