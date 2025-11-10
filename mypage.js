@@ -10,6 +10,19 @@ function escapeHtml(text) {
     return text.replace(/[&<>"']/g, m => map[m]);
 }
 
+// ハッシュタグを装飾する関数
+function formatHashtags(text) {
+    // まずHTMLエスケープ
+    const escapedText = escapeHtml(text);
+    
+    // #から次の空白(またはテキスト末尾)までをハッシュタグとして認識
+    const hashtagRegex = /#[^\s#]+/g;
+    
+    return escapedText.replace(hashtagRegex, (match) => {
+        return `<span class="hashtag">${match}</span>`;
+    });
+}
+
 // 時間表示関数
 function getTimeAgo(timestamp) {
     const now = new Date();
@@ -40,6 +53,20 @@ async function openMypage() {
             alert("ログインしていません");
             return;
         }
+                // マイページを表示
+        document.getElementById('mypage').style.display = 'block';
+        document.getElementById('tweet').style.display = 'none';
+        document.getElementById('tweetreload').style.display = 'none';
+        document.getElementById('newtweet').style.display = 'none';
+        const header = document.getElementById('header');
+        header.style.display = 'none';
+        // ヘッダーのtransformをリセット
+        header.style.transform = 'translateY(0)';
+        // bodyのpadding-topをリセット（ヘッダー分のスペースを削除）
+        document.body.style.paddingTop = '0';
+        
+        // マイページのスクロール位置を一番上にリセット
+        document.getElementById('mypage').scrollTop = 0;
 
         
         const metadata = await window.magic.user.getInfo();
@@ -68,20 +95,6 @@ async function openMypage() {
         document.getElementById('mypage-icon').src = `svg/kkrn_icon_user_${icon}.svg`;
         document.getElementById('mypage-username').textContent = name;
         
-        // マイページを表示
-        document.getElementById('mypage').style.display = 'block';
-        document.getElementById('tweet').style.display = 'none';
-        document.getElementById('tweetreload').style.display = 'none';
-        document.getElementById('newtweet').style.display = 'none';
-        const header = document.getElementById('header');
-        header.style.display = 'none';
-        // ヘッダーのtransformをリセット
-        header.style.transform = 'translateY(0)';
-        // bodyのpadding-topをリセット（ヘッダー分のスペースを削除）
-        document.body.style.paddingTop = '0';
-        
-        // マイページのスクロール位置を一番上にリセット
-        document.getElementById('mypage').scrollTop = 0;
         
         // 自分のツイートを読み込む
         await loadMyTweets();
@@ -94,7 +107,7 @@ async function openMypage() {
 
 // マイページを閉じる
 function closeMypage() {
-    loadTweets(); // ツイート一覧を再読み込み
+
     document.getElementById('mypage').style.display = 'none';
     document.getElementById('tweet').style.display = 'block';
     document.getElementById('tweetreload').style.display = 'flex';
@@ -104,11 +117,16 @@ function closeMypage() {
     // ヘッダーのtransformを元に戻す
     header.style.transform = 'translateY(0)';
     // bodyのpadding-topを元に戻す
-    document.body.style.paddingTop = '92px';
+    document.body.style.paddingTop = '98px';
+    loadTweets(); // ツイート一覧を再読み込み
 }
 
 // 自分のツイートを読み込む
 async function loadMyTweets() {
+    // ローディング表示
+    const tweetContainer = document.getElementById('mypage-tweets');
+    tweetContainer.innerHTML = '<div style="text-align: center; padding: 50px;"><div class="spinner" style="margin: 0 auto 20px;"></div><p style="color: #666;">読み込み中...</p></div>';
+    
     try {
         const didToken = await window.magic.user.getIdToken();
         
@@ -153,7 +171,7 @@ async function loadMyTweets() {
                             <p class="timestamp">${timeAgo}</p>
                         </div>
                         <div class="rbottom">
-                            <p class="content">${escapeHtml(tweet.message)}</p>
+                            <p class="content">${formatHashtags(tweet.message)}</p>
                             <div class="delete" data-tweet-id="${tweet.id}">
                                 <img src="svg/dustbox.svg" class="delete-icon" alt="">
                                 <p class="delete-message">削除</p>

@@ -151,6 +151,17 @@ let currentSort = 'toukou'; // デフォルトは投稿順
 
 // ツイートをデータベースから取得して表示
 async function loadTweets(sortType = currentSort) {
+    // ローディング表示
+    const loadingOverlay = document.getElementById('loading-overlay');
+    
+    if (loadingOverlay) {
+        loadingOverlay.style.display = 'flex';
+        
+        // bodyのpadding-topの値を取得してローディングオーバーレイのtopに適用
+        const bodyPaddingTop = getComputedStyle(document.body).paddingTop;
+        loadingOverlay.style.top = bodyPaddingTop;
+    }
+    
     try {
         // ログイン中のユーザーのメールアドレスを取得
         const isLoggedIn = await window.magic.user.isLoggedIn();
@@ -158,6 +169,9 @@ async function loadTweets(sortType = currentSort) {
         // ログインしていない場合は処理を中断
         if (!isLoggedIn) {
             console.log('ログインが必要です');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
             showLoginScreen();
             return;
         }
@@ -209,7 +223,7 @@ async function loadTweets(sortType = currentSort) {
                             <p class="timestamp">${timeAgo}</p>
                         </div>
                         <div class="rbottom">
-                            <p class="content">${escapeHtml(tweet.message)}</p>
+                            <p class="content">${formatHashtags(tweet.message)}</p>
                             <div class="iine" data-tweet-id="${tweet.id}" data-liked="${isLiked}">
                                 <p class="iine-icon" style="color: ${iineColor}">${iineIcon}</p>
                                 <p class="iine-num">${tweet.iine}</p>
@@ -230,14 +244,33 @@ async function loadTweets(sortType = currentSort) {
         }
     } catch (error) {
         console.error('ツイート取得APIエラー:', error);
+    } finally {
+        // ローディング非表示
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
+        }
     }
 }
 
-// HTMLエスケープ関数（XSS対策）
+// HTMLエスケープ関数(XSS対策)
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// ハッシュタグを装飾する関数
+function formatHashtags(text) {
+    // まずHTMLエスケープ
+    const escapedText = escapeHtml(text);
+    
+    // #から次の空白(またはテキスト末尾)までをハッシュタグとして認識
+    // 改行、スペース、タブで終了
+    const hashtagRegex = /#[^\s#]+/g;
+    
+    return escapedText.replace(hashtagRegex, (match) => {
+        return `<span class="hashtag">${match}</span>`;
+    });
 }
 
 // 経過時間を計算する関数
@@ -272,7 +305,7 @@ function hideLoginScreen() {
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('main-content').style.display = 'block';
     
-    // ツイートを読み込む
+    // ツイートを読み込む（ローディング表示付き）
     loadTweets();
 }
 

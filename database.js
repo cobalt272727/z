@@ -22,7 +22,7 @@ function cancelTweet() {
     // ヘッダーのtransformを元に戻す
     header.style.transform = 'translateY(0)';
     // bodyのpadding-topを元に戻す
-    document.body.style.paddingTop = '92px';
+    document.body.style.paddingTop = '98px';
     const tweetingArea = document.getElementById('tweeting-area');
     document.getElementById('tweet').style.display = 'block';
             document.getElementById('tweetreload').style.display = 'flex';
@@ -57,7 +57,7 @@ function updateCharCount() {
     
     // 警告色の設定
     counter.classList.remove('warning', 'danger');
-    if (currentLength >= 80 && currentLength < 90) {
+    if (currentLength > 30 && currentLength < 90) {
         counter.classList.add('warning');
     } else if (currentLength >= 90) {
         counter.classList.add('danger');
@@ -134,6 +134,56 @@ let isSending = false;
 
 // テキストエリアに入力イベントを設定
 document.getElementById('tweet-input').addEventListener('input', updateCharCount);
+
+// スマホでキーボード表示時にカウンターの位置を調整
+const tweetInput = document.getElementById('tweet-input');
+const charCounter = document.getElementById('char-counter');
+
+// フォーカス時の処理
+tweetInput.addEventListener('focus', () => {
+    // スマホの場合、キーボードの上に表示されるように調整
+    if (window.innerWidth <= 768) {
+        // visualViewportが利用可能な場合（モダンブラウザ）
+        if (window.visualViewport) {
+            const updateCounterPosition = () => {
+                const viewportHeight = window.visualViewport.height;
+                const windowHeight = window.innerHeight;
+                const keyboardHeight = windowHeight - viewportHeight;
+                
+                if (keyboardHeight > 100) {
+                    // キーボードが表示されている場合
+                    charCounter.style.bottom = `${keyboardHeight + 20}px`;
+                    charCounter.style.transition = 'bottom 0.3s ease';
+                }
+            };
+            
+            // visualViewportのリサイズを監視
+            window.visualViewport.addEventListener('resize', updateCounterPosition);
+            window.visualViewport.addEventListener('scroll', updateCounterPosition);
+            updateCounterPosition();
+            
+            // フォーカスが外れた時にイベントリスナーを削除
+            tweetInput.addEventListener('blur', () => {
+                window.visualViewport.removeEventListener('resize', updateCounterPosition);
+                window.visualViewport.removeEventListener('scroll', updateCounterPosition);
+                charCounter.style.bottom = '20px';
+                charCounter.style.transition = 'bottom 0.3s ease';
+            }, { once: true });
+        } else {
+            // フォールバック: 固定位置を上に移動
+            charCounter.style.bottom = '220px';
+            charCounter.style.transition = 'bottom 0.3s ease';
+        }
+    }
+});
+
+// ブラー時の処理
+tweetInput.addEventListener('blur', () => {
+    // 元の位置に戻す
+    setTimeout(() => {
+        charCounter.style.bottom = '20px';
+    }, 100);
+});
 
 document.getElementById("send-tweet-btn").addEventListener("click", async () => {
       // 送信中の場合は処理をスキップ

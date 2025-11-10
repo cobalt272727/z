@@ -331,26 +331,28 @@ app.post("/save", verifyMagicToken, async (req, res) => {
       [icon, name, message]
     );
 
-    // 新しい表示サーバーにメッセージを送信
-    try {
-      const displayServerUrl = process.env.DISPLAY_SERVER_URL || 'http://localhost:3002';
-      const displayResponse = await fetch(`${displayServerUrl}/broadcast`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ name, message })
-      });
-      
-      if (displayResponse.ok) {
-        console.log("表示サーバーにメッセージを送信しました");
-      } else {
-        console.warn("表示サーバーへの送信に失敗しました");
+    if(message.length <= 30) {
+      // 新しい表示サーバーにメッセージを送信
+      try {
+        const displayServerUrl = process.env.DISPLAY_SERVER_URL || 'http://localhost:3002';
+        const displayResponse = await fetch(`${displayServerUrl}/broadcast`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ name, message })
+        });
+        
+        if (displayResponse.ok) {
+          console.log("表示サーバーにメッセージを送信しました");
+        } else {
+          console.warn("表示サーバーへの送信に失敗しました");
+        }
+      } catch (displayError) {
+        console.error("表示サーバーへの送信エラー:", displayError);
+        // エラーが発生してもメインの処理は続行
       }
-    } catch (displayError) {
-      console.error("表示サーバーへの送信エラー:", displayError);
-      // エラーが発生してもメインの処理は続行
-    }
+  }
 
     res.json({ status: "ツイートを送信しました!" });
   } catch (err) {
