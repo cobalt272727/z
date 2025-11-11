@@ -78,12 +78,64 @@ document.addEventListener("click", async (event) => {
       console.error("ツイートIDが見つかりません");
       return;
     }
+
+    const iineIcon = iineBtn.querySelector(".iine-icon");
+    const iineNum = iineBtn.querySelector(".iine-num");
+    const currentNum = parseInt(iineNum.innerText);
+    const isLiked = iineBtn.getAttribute("data-liked") === "true";
+    
+    // 楽観的UI更新（先にアニメーション）
+    if (!isLiked) {
+      // いいねを追加する場合
+      // 円のアニメーション要素を作成
+      const circle = document.createElement('div');
+      circle.className = 'iine-animation-circle active';
+      iineBtn.appendChild(circle);
+      
+      // ハートアイコンを一旦非表示
+      iineIcon.style.opacity = '0';
+      
+      // 少し遅延してハートを表示
+      setTimeout(() => {
+        iineIcon.innerText = "♥";
+        iineIcon.style.color = "rgb(216, 65, 126)";
+        iineIcon.style.opacity = '1';
+        iineIcon.classList.add('heart-pop');
+        
+        // アニメーション終了後にクラスを削除
+        setTimeout(() => {
+          iineIcon.classList.remove('heart-pop');
+          circle.remove();
+        }, 600);
+      }, 100);
+      
+      iineNum.innerText = currentNum + 1;
+      iineBtn.setAttribute("data-liked", "true");
+    } else {
+      // いいねを取り消す場合（即座に変更）
+      iineIcon.innerText = "♡";
+      iineIcon.style.color = "";
+      iineNum.innerText = currentNum - 1;
+      iineBtn.setAttribute("data-liked", "false");
+    }
     
     // ログイン中のユーザーのメールアドレスを取得
     const isLoggedIn = await window.magic.user.isLoggedIn();
     
     if (!isLoggedIn) {
       alert("ログインしていません");
+      // 元に戻す
+      if (!isLiked) {
+        iineIcon.innerText = "♡";
+        iineIcon.style.color = "";
+        iineNum.innerText = currentNum;
+        iineBtn.setAttribute("data-liked", "false");
+      } else {
+        iineIcon.innerText = "♥";
+        iineIcon.style.color = "rgb(216, 65, 126)";
+        iineNum.innerText = currentNum;
+        iineBtn.setAttribute("data-liked", "true");
+      }
       return;
     }
     
@@ -93,38 +145,51 @@ document.addEventListener("click", async (event) => {
     // DIDトークンを取得
     const didToken = await window.magic.user.getIdToken();
     
-    // サーバーにPOSTリクエストを送信
-    const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/iine`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${didToken}`
-      },
-      body: JSON.stringify({ id })
-    });
+    try {
+      // サーバーにPOSTリクエストを送信
+      const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/iine`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${didToken}`
+        },
+        body: JSON.stringify({ id })
+      });
 
-    const result = await response.json();
+      const result = await response.json();
 
-    console.log(result);
+      console.log(result);
 
-    if (result.status === "success") {
-      const iineIcon = iineBtn.querySelector(".iine-icon");
-      const iineNum = iineBtn.querySelector(".iine-num");
-      const currentNum = parseInt(iineNum.innerText);
-      
-      if (result.action === "liked") {
-        // いいねを追加
-        iineIcon.innerText = "♥";
-        iineIcon.style.color = "rgb(216, 65, 126)";
-        iineNum.innerText = currentNum + 1;
-        iineBtn.setAttribute("data-liked", "true");
-      } else if (result.action === "unliked") {
-        // いいねを取り消し
+      // 失敗した場合は元に戻す
+      if (result.status !== "success") {
+        if (!isLiked) {
+          iineIcon.innerText = "♡";
+          iineIcon.style.color = "";
+          iineNum.innerText = currentNum;
+          iineBtn.setAttribute("data-liked", "false");
+        } else {
+          iineIcon.innerText = "♥";
+          iineIcon.style.color = "rgb(216, 65, 126)";
+          iineNum.innerText = currentNum;
+          iineBtn.setAttribute("data-liked", "true");
+        }
+        alert("いいねの処理に失敗しました");
+      }
+    } catch (error) {
+      console.error("いいねAPIエラー:", error);
+      // エラー時も元に戻す
+      if (!isLiked) {
         iineIcon.innerText = "♡";
         iineIcon.style.color = "";
-        iineNum.innerText = currentNum - 1;
+        iineNum.innerText = currentNum;
         iineBtn.setAttribute("data-liked", "false");
+      } else {
+        iineIcon.innerText = "♥";
+        iineIcon.style.color = "rgb(216, 65, 126)";
+        iineNum.innerText = currentNum;
+        iineBtn.setAttribute("data-liked", "true");
       }
+      alert("通信エラーが発生しました");
     }
   }
 });
