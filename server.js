@@ -10,6 +10,10 @@ import { fileURLToPath } from "url";
 import { Magic } from "@magic-sdk/admin";
 import dotenv from "dotenv";
 
+// Azure Content Safety設定
+const ENABLE_AZURE_CONTENT_SAFETY = true; // true: 有効, false: 無効
+
+
 // 環境変数を読み込む
 dotenv.config();
 
@@ -33,7 +37,7 @@ app.use(cors({
     // 許可するオリジンのリスト
     const allowedOrigins = [
       'http://localhost:3000',
-      'http://localhost:5500',
+      'http://localhost:5501',
       'https://z.mcs12.net'
     ];
     
@@ -300,29 +304,33 @@ app.post("/save", verifyMagicToken, async (req, res) => {
       return;
     }
     
-    // Azure Content Safetyでコンテンツをチェック
-    const safetyCheck = await checkContentSafety(message);
-    
-    if (!safetyCheck.safe) {
-      console.log("不適切なコンテンツが検出されました:");
+    // Azure Content Safetyでコンテンツをチェック（有効な場合のみ）
+    if (ENABLE_AZURE_CONTENT_SAFETY) {
+      const safetyCheck = await checkContentSafety(message);
       
-      // 不適切なコンテンツをデータベースに記録
-      try {
-        await pool.query(
-          "INSERT INTO inappropriate_content_log (user_name, user_email, content, detected_categories) VALUES ($1, $2, $3, $4)",
-          [name, email, message, JSON.stringify(safetyCheck.categories)]
-        );
-        console.log("不適切なコンテンツをログに記録しました");
-      } catch (logErr) {
-        console.error("ログ記録エラー:", logErr);
+      if (!safetyCheck.safe) {
+        console.log("不適切なコンテンツが検出されました:");
+        
+        // 不適切なコンテンツをデータベースに記録
+        try {
+          await pool.query(
+            "INSERT INTO inappropriate_content_log (user_name, user_email, content, detected_categories) VALUES ($1, $2, $3, $4)",
+            [name, email, message, JSON.stringify(safetyCheck.categories)]
+          );
+          console.log("不適切なコンテンツをログに記録しました");
+        } catch (logErr) {
+          console.error("ログ記録エラー:", logErr);
+        }
+        
+        res.status(400).json({ 
+          status: "error", 
+          message: "不適切なコンテンツが含まれているため、投稿できません。",
+          categories: safetyCheck.categories
+        });
+        return;
       }
-      
-      res.status(400).json({ 
-        status: "error", 
-        message: "不適切なコンテンツが含まれているため、投稿できません。",
-        categories: safetyCheck.categories
-      });
-      return;
+    } else {
+      console.log("Azure Content Safety チェックは無効化されています");
     }
     
     // tweetlistに挿入

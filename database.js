@@ -1,4 +1,11 @@
 function newtweet() {
+    // 注意メッセージを表示するかチェック
+    const dontShowAgain = localStorage.getItem('dontShowDisplayMessage');
+    
+    if (!dontShowAgain) {
+        showDisplayMessage();
+    }
+    
     const header = document.getElementById('header');
     header.style.display = 'none';
     // ヘッダーのtransformをリセット
@@ -15,6 +22,44 @@ function newtweet() {
     // 文字数カウンターを表示
     document.getElementById('char-counter').style.display = 'flex';
     updateCharCount();
+}
+
+// 映像表示に関する注意メッセージを表示
+function showDisplayMessage() {
+    const overlay = document.createElement('div');
+    overlay.className = 'display-message-overlay';
+    
+    const messageBox = document.createElement('div');
+    messageBox.className = 'display-message-box';
+    
+    messageBox.innerHTML = `
+        <h3>映像表示について</h3>
+        <p>映像に流れるのは<strong>30文字以下の投稿のみ</strong>です</p>
+        <div class="checkbox-container">
+            <input type="checkbox" id="dont-show-again" />
+            <label for="dont-show-again">このメッセージを今後表示しない</label>
+        </div>
+        <button class="confirm-btn" id="confirm-display-message">OK</button>
+    `;
+    
+    overlay.appendChild(messageBox);
+    document.body.appendChild(overlay);
+    
+    // OKボタンのイベントリスナー
+    document.getElementById('confirm-display-message').addEventListener('click', () => {
+        const checkbox = document.getElementById('dont-show-again');
+        if (checkbox.checked) {
+            localStorage.setItem('dontShowDisplayMessage', 'true');
+        }
+        overlay.remove();
+    });
+    
+    // オーバーレイクリックで閉じる
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
 }
 function cancelTweet() {
     const header = document.getElementById('header');
