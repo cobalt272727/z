@@ -108,7 +108,7 @@ header {
 	width: calc(100% - 2em);
 	color: #fff;
 	background-color: #000;
-	z-index: 2;
+	z-index: 5;
 	transition: transform .3s;
 	top: 0;
     text-align: center;
