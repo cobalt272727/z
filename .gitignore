@@ -20,6 +20,7 @@ Thumbs.db
 
 # ログファイル
 *.log
+logs/
 
 # カバレッジ
 coverage/
