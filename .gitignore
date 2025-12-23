@@ -27,8 +27,6 @@ coverage/
 *.lcov
 
 # ビルド成果物
-dist/
-build/
 
 # config.js（環境固有の設定）
 config.js
