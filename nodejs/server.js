@@ -7,8 +7,8 @@ import { AzureKeyCredential } from "@azure/core-auth";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { Magic } from "@magic-sdk/admin";
 import dotenv from "dotenv";
+import PocketBase from "pocketbase";
 
 // 環境変数を読み込む
 dotenv.config();
@@ -17,8 +17,12 @@ const { Pool } = pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Magic.link Admin SDK の初期化
-const magic = new Magic(process.env.MAGIC_SECRET_KEY);
+const pb = new PocketBase(process.env.POCKETBASE_URL);
+
+const authData = await pb.collection('_superusers').authWithPassword(
+    process.env.POCKETBASE_EMAIL,
+    process.env.POCKETBASE_PASSWORD,
+);
 
 const app = express();
 
@@ -49,43 +53,6 @@ app.use(cors({
 
 app.use(express.json());
 
-// Magic.linkトークン検証ミドルウェア
-async function verifyMagicToken(req, res, next) {
-  try {
-    // AuthorizationヘッダーまたはリクエストボディからDIDトークンを取得
-    let didToken = req.headers.authorization?.replace('Bearer ', '');
-    
-    if (!didToken && req.body?.didToken) {
-      didToken = req.body.didToken;
-    }
-    
-    if (!didToken) {
-      return res.status(401).json({ status: "error", message: "認証トークンがありません" });
-    }
-    
-    // Magic Link SDKでトークンを検証
-    magic.token.validate(didToken);
-    const metadata = await magic.users.getMetadataByToken(didToken);
-    
-    if (!metadata.email) {
-      return res.status(401).json({ status: "error", message: "メールアドレスが取得できません" });
-    }
-    
-    // ドメインチェック
-    if (!metadata.email.endsWith('@g.kumamoto-nct.ac.jp')) {
-      return res.status(403).json({ status: "error", message: "許可されていないドメインです" });
-    }
-    
-    // リクエストオブジェクトにユーザー情報を追加
-    req.userEmail = metadata.email;
-    req.userMetadata = metadata;
-    
-    next();
-  } catch (error) {
-    console.error("トークン検証エラー:", error);
-    return res.status(401).json({ status: "error", message: "認証に失敗しました" });
-  }
-}
 
 // Azure Content Safety設定
 const endpoint = process.env.AZURE_CONTENT_SAFETY_ENDPOINT;
@@ -176,11 +143,41 @@ async function checkContentSafety(text) {
     return { safe: true, categories: [] }; // エラー時は通過させる
   }
 }
+app.post("/user-create", async (req, res) => {
+  const email = req.body.email;
+  try {
+    const record = await pb.collection('users').getFirstListItem(`email="${email}"`, {
+      expand: 'relField1,relField2.subRelField',
+    });
+    res.json({ status: "success", user: record });
+  } catch (err) {
+    console.error(err);
+    if (err.status === 404) {
+      try{
+        const data = {
+          "email": email,
+          "emailVisibility": true,
+          "password": "12345678",
+          "passwordConfirm": "12345678",
+          "verify": true
+      };
+
+      const record = await pb.collection('users').create(data);
+      res.json({ status: "success", user: record });
+      } catch (createErr) {
+        console.error(createErr);
+        res.status(500).json({ status: "error", message: "ユーザー作成に失敗しました" });
+      }
+    } else {
+      res.status(500).json({ status: "error", message: "エラーが発生しました" });
+    }
+  }
+});
 
 // ユーザーを登録するAPI
-app.post("/register-user", verifyMagicToken, async (req, res) => {
+app.post("/register-user", async (req, res) => {
   // 認証済みのメールアドレスを使用
-  const email = req.userEmail;
+  const email = req.body.email;
 
   try {
     // メールアドレスが既に存在するかチェック
@@ -209,9 +206,9 @@ app.post("/register-user", verifyMagicToken, async (req, res) => {
 });
 
 // ツイート一覧を取得するAPI
-app.get("/tweets", verifyMagicToken, async (req, res) => {
+app.get("/tweets", async (req, res) => {
   // 認証済みのメールアドレスを使用
-  const email = req.userEmail;
+  const email = req.query.email;
   const sortType = req.query.sort || 'toukou'; // デフォルトは投稿順
   
   try {
@@ -246,10 +243,10 @@ app.get("/tweets", verifyMagicToken, async (req, res) => {
 });
 
 // メッセージを保存するAPI
-app.post("/save", verifyMagicToken, async (req, res) => {
+app.post("/save", async (req, res) => {
   const { message } = req.body;
   // 認証済みのメールアドレスを使用
-  const email = req.userEmail;
+  const email = req.body.email;
   
   try {
     // メールアドレスからuserlistのnameとiconを取得
@@ -363,10 +360,10 @@ app.post("/save", verifyMagicToken, async (req, res) => {
 });
 
 // いいねを保存するAPI
-app.post("/iine", verifyMagicToken, async (req, res) => {
+app.post("/iine", async (req, res) => {
   const { id } = req.body;
   // 認証済みのメールアドレスを使用
-  const email = req.userEmail;
+  const email = req.body.email;
   
   try {
     // 既にいいねしているかチェック
@@ -409,15 +406,14 @@ app.post("/iine", verifyMagicToken, async (req, res) => {
 });
 
 // 自分のツイート一覧を取得するAPI
-app.get("/my-tweets", verifyMagicToken, async (req, res) => {
-  const email = req.userEmail;
-  
+app.get("/my-tweets", async (req, res) => {
+  const email = req.query.email;
   try {
     const result = await pool.query(
       "SELECT id, icon, name, message, time, iine FROM tweetlist WHERE name = (SELECT name FROM userlist WHERE email = $1) ORDER BY id DESC",
       [email]
     );
-    
+
     res.json({ 
       status: "success", 
       tweets: result.rows
@@ -429,7 +425,7 @@ app.get("/my-tweets", verifyMagicToken, async (req, res) => {
 });
 
 // いいねしたユーザー一覧を取得するAPI
-app.get("/iine-users/:tweetId", verifyMagicToken, async (req, res) => {
+app.get("/iine-users/:tweetId", async (req, res) => {
   const { tweetId } = req.params;
   
   try {
@@ -453,9 +449,9 @@ app.get("/iine-users/:tweetId", verifyMagicToken, async (req, res) => {
 });
 
 // ツイートを削除するAPI
-app.delete("/tweets/:id", verifyMagicToken, async (req, res) => {
+app.delete("/tweets/:id", async (req, res) => {
   const { id } = req.params;
-  const email = req.userEmail;
+  const email = req.query.email;
   
   try {
     // 自分のツイートかチェック
@@ -493,4 +489,10 @@ app.delete("/tweets/:id", verifyMagicToken, async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+});
+
+process.on("SIGINT", async () => {
+  console.log("サーバーを終了します...");
+  pb.authStore.clear();
+  process.exit(0);
 });

@@ -13,12 +13,17 @@
     <div id="login-overlay">
         <div class="login-container">
             <h1>z</h1>
-            <p>メールアドレスでログイン</p>
             
             <div id="email-input-section">
+                <p>メールアドレスでログイン</p>
                 <input type="email" id="email-input" placeholder="メールアドレスを入力" />
-                <button id="send-link-btn" class="auth-btn">ログインリンクを送信</button>
+                <button id="send-link-btn" class="auth-btn">ログインコードを送信</button>
                 <p class="login-note">※ g.kumamoto-nct.ac.jp ドメインのメールアドレスのみ利用可能です</p>
+            </div>
+            <div id="otp-input-section" style="display: none;">
+                <p>ログインコードを入力</p>
+                <input type="text" id="otp-input" placeholder="ログインコードを入力" maxlength="6"/>
+                <button id="verify-otp-btn" class="auth-btn">ログイン</button>
             </div>
             
             <div id="link-sent-message" style="display: none;">
@@ -44,7 +49,7 @@
                 <div class="myicon" id="gomypage">
                     <img src="svg/kkrn_icon_user_1.svg" alt="User Icon" />
                 </div>
-                <div onclick="signOut()" class="signout-btn">
+                <div id="signout-btn" class="signout-btn">
                     <img src="svg/logout_white.svg" alt="Logout" />
                 </div>
             </div>
@@ -87,13 +92,13 @@
         <div class="tweetreload" id="tweetreload" onclick="loadTweets()">
             <img src="svg/reload_icon.svg" alt="">
         </div>
-        <div class="newtweet" id="newtweet" onclick="newtweet()">
+        <div class="newtweet" id="newtweet">
             <p>+</p>
         </div>
 
         <div class="tweeting-area" id="tweeting-area" style="display: none;">
             <div class="tweeting-top">
-                <div onclick="cancelTweet()" class="cancel-btn"><p>キャンセル</p></div>
+                <div id="cancel-btn" class="cancel-btn"><p>キャンセル</p></div>
                 <div class="send-tweet-btn" id="send-tweet-btn"><p>ツイートする</p></div>
             </div>
             
@@ -114,7 +119,7 @@
 
         <div class="mypage" id="mypage" style="display: none;">
             <div class="mypage-header">
-                <button class="mypage-close" onclick="closeMypage()">←</button>
+                <button class="mypage-close" id="close-mypage">←</button>
                 <div class="mypage-profile">
                     <img id="mypage-icon" src="svg/kkrn_icon_user_1.svg" alt="User Icon" class="mypage-icon"/>
                     <p id="mypage-username" class="mypage-username"></p>
@@ -127,21 +132,13 @@
         </div>
     </div>
     <script src="config.js"></script>
-    <script src="https://auth.magic.link/sdk"></script>
-    <script type="module">
-        // Magic.link の初期化
-        const magic = new Magic(window.APP_CONFIG.MAGIC_PUBLISHABLE_KEY, { locale: "ja" });
-        
-        // magicをグローバルに設定
-        window.magic = magic;
-    </script>
+    <script src="pb_auth.js" type="module"></script>
     <script src="smoothscroll.js"></script>
-    <script src="database.js"></script>
+    <script src="database.js" type="module"></script>
     <script src="font.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="auth.js"></script>
     <script src="header.js"></script>
-    <script src="mypage.js"></script>
+    <script src="mypage.js" type="module"></script>
 </body>
 </html>
 

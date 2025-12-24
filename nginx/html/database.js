@@ -1,3 +1,6 @@
+import PocketBase from "https://cdn.jsdelivr.net/npm/pocketbase/+esm";
+const pb = new PocketBase(window.APP_CONFIG.POCKETBASE_URL);
+
 function newtweet() {
     // 注意メッセージを表示するかチェック
     const dontShowAgain = localStorage.getItem('dontShowDisplayMessage');
@@ -165,7 +168,7 @@ document.addEventListener("click", async (event) => {
     }
     
     // ログイン中のユーザーのメールアドレスを取得
-    const isLoggedIn = await window.magic.user.isLoggedIn();
+    const isLoggedIn = pb.authStore.isValid;
     
     if (!isLoggedIn) {
       alert("ログインしていません");
@@ -183,22 +186,18 @@ document.addEventListener("click", async (event) => {
       }
       return;
     }
+
     
-    const metadata = await window.magic.user.getInfo();
-    const email = metadata.email;
-    
-    // DIDトークンを取得
-    const didToken = await window.magic.user.getIdToken();
-    
+
     try {
       // サーバーにPOSTリクエストを送信
+      const email = pb.authStore.model.email;
       const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/iine`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${didToken}`
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({ id })
+        body: JSON.stringify({ id, email })
       });
 
       const result = await response.json();
@@ -295,6 +294,9 @@ tweetInput.addEventListener('blur', () => {
     }, 100);
 });
 
+document.getElementById("newtweet").addEventListener("click", newtweet);
+document.getElementById("cancel-btn").addEventListener("click", cancelTweet);
+
 document.getElementById("send-tweet-btn").addEventListener("click", async () => {
       // 送信中の場合は処理をスキップ
       if (isSending) {
@@ -311,18 +313,14 @@ document.getElementById("send-tweet-btn").addEventListener("click", async () => 
       }
       
       // Magic.linkからログイン中のユーザー情報を取得
-      const isLoggedIn = await window.magic.user.isLoggedIn();
+      const isLoggedIn = pb.authStore.isValid;
       
       if (!isLoggedIn) {
         alert("ログインしていません");
         return;
       }
       
-      const metadata = await window.magic.user.getInfo();
-      const email = metadata.email;
-      
-      // DIDトークンを取得
-      const didToken = await window.magic.user.getIdToken();
+
 
       // 送信中フラグを立てる
       isSending = true;
@@ -336,14 +334,14 @@ document.getElementById("send-tweet-btn").addEventListener("click", async () => 
       sendBtn.querySelector("p").textContent = "送信中...";
 
       try {
+        const email = pb.authStore.model.email;
         // サーバーにPOSTリクエストを送信
         const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/save`, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${didToken}`
+            "Content-Type": "application/json"
           },
-          body: JSON.stringify({ message })
+          body: JSON.stringify({ message, email })
         });
 
         const result = await response.json();

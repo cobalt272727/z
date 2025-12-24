@@ -1,3 +1,5 @@
+import PocketBase from "https://cdn.jsdelivr.net/npm/pocketbase/+esm";
+const pb = new PocketBase(window.APP_CONFIG.POCKETBASE_URL);
 // HTMLエスケープ関数
 function escapeHtml(text) {
     const map = {
@@ -47,7 +49,7 @@ function getTimeAgo(timestamp) {
 // マイページを開く
 async function openMypage() {
     try {
-        const isLoggedIn = await window.magic.user.isLoggedIn();
+        const isLoggedIn = pb.authStore.isValid;
         
         if (!isLoggedIn) {
             alert("ログインしていません");
@@ -69,26 +71,11 @@ async function openMypage() {
         document.getElementById('mypage').scrollTop = 0;
 
         
-        const metadata = await window.magic.user.getInfo();
+        const metadata = await pb.collection('users').getOne(pb.authStore.model.id);
         const email = metadata.email;
         
         let icon = 1;
         let name = email.split('@')[0];
-        
-            // ユーザーリストから情報を取得
-            const didToken = await window.magic.user.getIdToken();
-            const tweetsResponse = await fetch(`${window.APP_CONFIG.API_BASE_URL}/my-tweets`, {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${didToken}`
-                }
-            });
-            const tweetsResult = await tweetsResponse.json();
-            
-            if (tweetsResult.tweets.length > 0) {
-                icon = tweetsResult.tweets[0].icon;
-                name = tweetsResult.tweets[0].name;
-            }
         
         
         // マイページのユーザー情報を更新
@@ -128,12 +115,11 @@ async function loadMyTweets() {
     tweetContainer.innerHTML = '<div style="text-align: center; padding: 50px;"><div class="spinner" style="margin: 0 auto 20px;"></div><p style="color: #666;">読み込み中...</p></div>';
     
     try {
-        const didToken = await window.magic.user.getIdToken();
-        
-        const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/my-tweets`, {
+        const email = pb.authStore.model.email;
+
+        const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/my-tweets?email=${encodeURIComponent(email)}`, {
             method: "GET",
             headers: {
-                "Authorization": `Bearer ${didToken}`
             }
         });
         
@@ -204,12 +190,10 @@ async function toggleIineUsers(tweetId) {
     }
     
     try {
-        const didToken = await window.magic.user.getIdToken();
         
         const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/iine-users/${tweetId}`, {
             method: "GET",
             headers: {
-                "Authorization": `Bearer ${didToken}`
             }
         });
         
@@ -247,12 +231,10 @@ async function deleteTweet(tweetId) {
     }
     
     try {
-        const didToken = await window.magic.user.getIdToken();
-        
-        const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/tweets/${tweetId}`, {
+        const email = pb.authStore.model.email;
+        const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/tweets/${tweetId}?email=${encodeURIComponent(email)}`, {
             method: "DELETE",
             headers: {
-                "Authorization": `Bearer ${didToken}`
             }
         });
         
@@ -285,3 +267,5 @@ document.addEventListener("click", async (event) => {
 
 // マイページアイコンのクリックイベント
 document.getElementById('gomypage').addEventListener('click', openMypage);
+document.getElementById('close-mypage').addEventListener('click', closeMypage);
+window.toggleIineUsers = toggleIineUsers;

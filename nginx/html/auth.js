@@ -13,33 +13,23 @@ async function sendLoginLink() {
         return;
     }
     
-    // Magic SDKの初期化を待つ
-    if (!window.magic) {
-        document.getElementById('loading-message').style.display = 'block';
-        document.getElementById('email-input-section').style.display = 'none';
-        
-        let attempts = 0;
-        const maxAttempts = 50; // 5秒間待機
-        
-        while (!window.magic && attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            attempts++;
-        }
-        
-        if (!window.magic) {
-            document.getElementById('loading-message').style.display = 'none';
-            document.getElementById('email-input-section').style.display = 'block';
-            alert('認証システムの初期化に失敗しました。ページをリロードしてください。');
-            return;
-        }
-    }
     
     try {
         document.getElementById('loading-message').style.display = 'block';
         document.getElementById('email-input-section').style.display = 'none';
         
-        // Magic.linkでログイン
-        await window.magic.auth.loginWithMagicLink({ email });
+        // popcketbaseでOTPを送信
+        const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/login`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email })
+        });
+
+        const result = await response.json();
+        if (result.status !== "success") {
+        }
         
         document.getElementById('loading-message').style.display = 'none';
         
