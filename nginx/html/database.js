@@ -1,4 +1,7 @@
 import PocketBase from "./pb.js";
+import { escapeHtml, formatHashtags, showDisplayMessage } from './utils.js';
+import { CONSTANTS } from './constants.js';
+
 const pb = new PocketBase(window.APP_CONFIG.POCKETBASE_URL);
 
 function newtweet() {
@@ -27,58 +30,6 @@ function newtweet() {
     updateCharCount();
 }
 
-// 汎用メッセージ表示関数
-// @param {string} title - メッセージのタイトル（デフォルト: "映像表示について"）
-// @param {string} message - メッセージの本文（デフォルト: "映像に流れるのは<strong>30文字以下の投稿のみ</strong>です"）
-// @param {boolean} showCheckbox - チェックボックスを表示するか（デフォルト: true）
-// @param {string} storageKey - localStorageのキー（デフォルト: "dontShowDisplayMessage"）
-function showDisplayMessage({
-    title = '映像表示について',
-    message = '映像に流れるのは<strong>30文字以下の投稿のみ</strong>です',
-    showCheckbox = true,
-    storageKey = 'dontShowDisplayMessage'
-} = {}) {
-    const overlay = document.createElement('div');
-    overlay.className = 'display-message-overlay';
-    
-    const messageBox = document.createElement('div');
-    messageBox.className = 'display-message-box';
-    
-    const checkboxHtml = showCheckbox ? `
-        <div class="checkbox-container">
-            <input type="checkbox" id="dont-show-again" />
-            <label for="dont-show-again">このメッセージを今後表示しない</label>
-        </div>
-    ` : '';
-    
-    messageBox.innerHTML = `
-        <h3>${title}</h3>
-        <p>${message}</p>
-        ${checkboxHtml}
-        <button class="confirm-btn" id="confirm-display-message">OK</button>
-    `;
-    
-    overlay.appendChild(messageBox);
-    document.body.appendChild(overlay);
-    
-    // OKボタンのイベントリスナー
-    document.getElementById('confirm-display-message').addEventListener('click', () => {
-        if (showCheckbox) {
-            const checkbox = document.getElementById('dont-show-again');
-            if (checkbox.checked) {
-                localStorage.setItem(storageKey, 'true');
-            }
-        }
-        overlay.remove();
-    });
-    
-    // オーバーレイクリックで閉じる
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            overlay.remove();
-        }
-    });
-}
 function cancelTweet() {
     const header = document.getElementById('header');
     header.style.display = 'block';
@@ -103,7 +54,7 @@ function updateCharCount() {
     const charCount = document.querySelector('.char-count');
     const progressCircle = document.querySelector('.progress-ring-circle');
     const counter = document.getElementById('char-counter');
-    const maxLength = 100;
+    const maxLength = CONSTANTS.TWEET_MAX_LENGTH;
     
     const currentLength = input.value.length;
     const percentage = currentLength / maxLength;
@@ -120,9 +71,9 @@ function updateCharCount() {
     
     // 警告色の設定
     counter.classList.remove('warning', 'danger');
-    if (currentLength > 30 && currentLength < 90) {
+    if (currentLength > CONSTANTS.DISPLAY_MESSAGE_MAX_LENGTH && currentLength < CONSTANTS.TWEET_WARNING_LENGTH) {
         counter.classList.add('warning');
-    } else if (currentLength >= 90) {
+    } else if (currentLength >= CONSTANTS.TWEET_WARNING_LENGTH) {
         counter.classList.add('danger');
     }
 }
@@ -433,5 +384,3 @@ document.getElementById("send-tweet-btn").addEventListener("click", async () => 
         sendBtn.querySelector("p").textContent = originalText;
       }
     });
-
-    window.showDisplayMessage = showDisplayMessage;

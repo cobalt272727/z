@@ -1,50 +1,7 @@
 import PocketBase from "./pb.js";
+import { escapeHtml, formatHashtags, getTimeAgo, showDisplayMessage } from './utils.js';
+
 const pb = new PocketBase(window.APP_CONFIG.POCKETBASE_URL);
-// HTMLエスケープ関数
-function escapeHtml(text) {
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return text.replace(/[&<>"']/g, m => map[m]);
-}
-
-// ハッシュタグを装飾する関数
-function formatHashtags(text) {
-    // まずHTMLエスケープ
-    const escapedText = escapeHtml(text);
-    
-    // #から次の空白(またはテキスト末尾)までをハッシュタグとして認識
-    const hashtagRegex = /#[^\s#]+/g;
-    
-    return escapedText.replace(hashtagRegex, (match) => {
-        return `<span class="hashtag">${match}</span>`;
-    });
-}
-
-// 時間表示関数
-function getTimeAgo(timestamp) {
-    const now = new Date();
-    const tweetTime = new Date(timestamp);
-    const diffMs = now - tweetTime;
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHour = Math.floor(diffMin / 60);
-    const diffDay = Math.floor(diffHour / 24);
-
-    if (diffSec < 60) {
-        return `${diffSec}秒前`;
-    } else if (diffMin < 60) {
-        return `${diffMin}分前`;
-    } else if (diffHour < 24) {
-        return `${diffHour}時間前`;
-    } else {
-        return `${diffDay}日前`;
-    }
-}
 
 // マイページを開く
 async function openMypage() {

@@ -13,6 +13,36 @@ import PocketBase from "pocketbase";
 // 環境変数を読み込む
 dotenv.config();
 
+// 定数定義
+const CONSTANTS = {
+  DISPLAY_MESSAGE_MAX_LENGTH: 30,
+  TWEET_MAX_LENGTH: 100,
+  TWEETS_LIMIT: 100,
+  CONTENT_SAFETY_SEVERITY_THRESHOLD: 1,
+  DEFAULT_ICON_RANGE: { min: 1, max: 5 },
+  DEFAULT_PASSWORD: '12345678'
+};
+
+// 必須環境変数のチェック
+const requiredEnvVars = [
+  'POCKETBASE_URL',
+  'POCKETBASE_EMAIL',
+  'POCKETBASE_PASSWORD',
+  'DB_USER',
+  'DB_HOST',
+  'DB_DATABASE',
+  'DB_PASSWORD',
+  'AZURE_CONTENT_SAFETY_ENDPOINT',
+  'AZURE_CONTENT_SAFETY_KEY'
+];
+
+for (const varName of requiredEnvVars) {
+  if (!process.env[varName]) {
+    console.error(`必須の環境変数が設定されていません: ${varName}`);
+    process.exit(1);
+  }
+}
+
 const { Pool } = pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,6 +61,22 @@ try {
 }
 
 const app = express();
+
+// エラーレスポンスヘルパー関数
+const sendErrorResponse = (res, statusCode, message, additionalData = {}) => {
+  return res.status(statusCode).json({ 
+    status: "error", 
+    message,
+    ...additionalData 
+  });
+};
+
+const sendSuccessResponse = (res, data = {}) => {
+  return res.json({ 
+    status: "success", 
+    ...data 
+  });
+};
 
 // CORS設定 - 同一オリジンのみ許可（クロスドメイン非対応）
 app.use(cors({
@@ -157,8 +203,8 @@ async function checkContentSafety(text) {
         severity: analysis.severity
       });
       
-      // severity が 1 以上なら unsafe
-      if (analysis.severity >= 1) {
+      // severity が閾値以上なら unsafe
+      if (analysis.severity >= CONSTANTS.CONTENT_SAFETY_SEVERITY_THRESHOLD) {
         isSafe = false;
       }
     }
@@ -176,7 +222,7 @@ app.post("/user-create", async (req, res) => {
     const existingUser = await pb.collection('users').getList(1, 1, {
       filter: `email="${email}"`
     });
-    
+
     if (existingUser.items.length > 0) {
       // ユーザーが既に存在
       return res.json({ status: "success", user: existingUser.items[0] });
@@ -185,11 +231,11 @@ app.post("/user-create", async (req, res) => {
     // ユーザーが存在しない場合は新規作成
     console.log("ユーザー新規作成:", email);
     const data = {
-      "email": email,
-      "emailVisibility": false,
-      "password": "12345678",
-      "passwordConfirm": "12345678",
-      "verify": true
+      email,
+      emailVisibility: false,
+      password: CONSTANTS.DEFAULT_PASSWORD,
+      passwordConfirm: CONSTANTS.DEFAULT_PASSWORD,
+      verify: true
     };
     
     const record = await pb.collection('users').create(data);
@@ -219,8 +265,9 @@ app.post("/register-user",authenticateToken, async (req, res) => {
     // @以前の文字列を取得
     const name = email.split('@')[0];
     
-    // 1-5のランダムなアイコン番号を生成
-    const icon = Math.floor(Math.random() * 5) + 1;
+    // ランダムなアイコン番号を生成
+    const { min, max } = CONSTANTS.DEFAULT_ICON_RANGE;
+    const icon = Math.floor(Math.random() * (max - min + 1)) + min;
 
     // 新規ユーザーを挿入
     await pool.query("INSERT INTO userlist (email, name, icon) VALUES ($1, $2, $3)", [email, name, icon]);
@@ -243,10 +290,10 @@ app.get("/tweets",authenticateToken, async (req, res) => {
     let query;
     if (sortType === 'likes') {
       // いいね順（降順）、いいね数が同じ場合は新しい順
-      query = "SELECT id, icon, name, message, time, iine FROM tweetlist ORDER BY iine DESC, id DESC LIMIT 100";
+      query = `SELECT id, icon, name, message, time, iine FROM tweetlist ORDER BY iine DESC, id DESC LIMIT ${CONSTANTS.TWEETS_LIMIT}`;
     } else {
       // 投稿順（デフォルト）
-      query = "SELECT id, icon, name, message, time, iine FROM tweetlist ORDER BY id DESC LIMIT 100";
+      query = `SELECT id, icon, name, message, time, iine FROM tweetlist ORDER BY id DESC LIMIT ${CONSTANTS.TWEETS_LIMIT}`;
     }
     
     const result = await pool.query(query);
@@ -356,7 +403,8 @@ app.post("/save", authenticateToken, async (req, res) => {
       [icon, name, message]
     );
 
-    if(message.length <= 30) {
+    // 短いメッセージは表示サーバーにも送信
+    if(message.length <= CONSTANTS.DISPLAY_MESSAGE_MAX_LENGTH) {
       // 新しい表示サーバーにメッセージを送信
       try {
         const displayServerUrl = process.env.DISPLAY_SERVER_URL || 'http://localhost:3002';

@@ -1,54 +1,8 @@
 import PocketBase from "./pb.js";
+import { escapeHtml, formatHashtags, getTimeAgo, showDisplayMessage } from './utils.js';
+
 const pb = new PocketBase(window.APP_CONFIG.POCKETBASE_URL);
 let otpId;
-
-// HTMLエスケープ関数(XSS対策)
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// ハッシュタグを装飾する関数
-function formatHashtags(text) {
-    // まずHTMLエスケープ
-    const escapedText = escapeHtml(text);
-    
-    // #から次の空白(またはテキスト末尾)までをハッシュタグとして認識
-    // 改行、スペース、タブで終了
-    const hashtagRegex = /#[^\s#]+/g;
-    
-    return escapedText.replace(hashtagRegex, (match) => {
-        return `<span class="hashtag">${match}</span>`;
-    });
-}
-
-// 経過時間を計算する関数
-function getTimeAgo(timestamp) {
-    const now = new Date();
-    const tweetTime = new Date(timestamp);
-    const diffMs = now - tweetTime;
-    const diffSeconds = Math.floor(diffMs / 1000);
-    const diffMinutes = Math.floor(diffSeconds / 60);
-    const diffHours = Math.floor(diffMinutes / 60);
-    const diffDays = Math.floor(diffHours / 24);
-    const diffMonths = Math.floor(diffDays / 30);
-    const diffYears = Math.floor(diffDays / 365);
-
-    if (diffSeconds < 60) {
-        return diffSeconds + '秒前';
-    } else if (diffMinutes < 60) {
-        return diffMinutes + '分前';
-    } else if (diffHours < 24) {
-        return diffHours + '時間前';
-    } else if (diffDays < 30) {
-        return diffDays + '日前';
-    } else if (diffMonths < 12) {
-        return diffMonths + 'ヶ月前';
-    } else {
-        return diffYears + '年前';
-    }
-}
 
 // 認証状態をチェック
 async function checkAuthState() {
@@ -119,6 +73,7 @@ async function registerUserToDatabase(email) {
 
         document.getElementById('mypage-icon').src = `svg/kkrn_icon_user_${result.icon}.svg`;
         document.getElementById('go-mypage-icon').src = `svg/kkrn_icon_user_${result.icon}.svg`; 
+        document.getElementById('tweeting-icon').src = `svg/kkrn_icon_user_${result.icon}.svg`;
         
         if (result.status === "success") {
             console.log('新規ユーザー登録完了:', result);
