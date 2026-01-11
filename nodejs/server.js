@@ -19,10 +19,16 @@ const __dirname = path.dirname(__filename);
 
 const pb = new PocketBase(process.env.POCKETBASE_URL);
 
-const authData = await pb.collection('_superusers').authWithPassword(
+try {
+  await pb.collection('_superusers').authWithPassword(
     process.env.POCKETBASE_EMAIL,
     process.env.POCKETBASE_PASSWORD,
-);
+  );
+  console.log("PocketBaseにログインしました");
+} catch (error) {
+  console.error("PocketBaseログインエラー");
+  process.exit(1);
+}
 
 const app = express();
 
@@ -39,7 +45,8 @@ app.use(cors({
       'http://localhost',
       'http://localhost:3000',
       'http://localhost:5500',
-      'https://z.mcs12.net'
+      'https://z.mcs12.net',
+      'https://z.stream.mcs12.net:3021'
     ];
     
     if (allowedOrigins.indexOf(origin) !== -1) {
@@ -53,6 +60,25 @@ app.use(cors({
 
 app.use(express.json());
 
+async function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ status: 'error', message: '認証が必要です' });
+  }
+  
+  try {
+    // ユーザートークン検証用に別のPocketBaseインスタンスを作成
+    const userPb = new PocketBase(process.env.POCKETBASE_URL);
+    userPb.authStore.save(token);
+    const userData = await userPb.collection('users').authRefresh();
+    req.user = userData.record;  // 検証済みユーザー情報をreqに保存
+    next();
+  } catch (error) {
+    return res.status(403).json({ status: 'error', message: '無効なトークンです' });
+  }
+}
 
 // Azure Content Safety設定
 const endpoint = process.env.AZURE_CONTENT_SAFETY_ENDPOINT;
@@ -146,46 +172,47 @@ async function checkContentSafety(text) {
 app.post("/user-create", async (req, res) => {
   const email = req.body.email;
   try {
-    const record = await pb.collection('users').getFirstListItem(`email="${email}"`, {
-      expand: 'relField1,relField2.subRelField',
+    // 先に存在確認
+    const existingUser = await pb.collection('users').getList(1, 1, {
+      filter: `email="${email}"`
     });
-    res.json({ status: "success", user: record });
-  } catch (err) {
-    console.error(err);
-    if (err.status === 404) {
-      try{
-        const data = {
-          "email": email,
-          "emailVisibility": true,
-          "password": "12345678",
-          "passwordConfirm": "12345678",
-          "verify": true
-      };
-
-      const record = await pb.collection('users').create(data);
-      res.json({ status: "success", user: record });
-      } catch (createErr) {
-        console.error(createErr);
-        res.status(500).json({ status: "error", message: "ユーザー作成に失敗しました" });
-      }
-    } else {
-      res.status(500).json({ status: "error", message: "エラーが発生しました" });
+    
+    if (existingUser.items.length > 0) {
+      // ユーザーが既に存在
+      return res.json({ status: "success", user: existingUser.items[0] });
     }
+    
+    // ユーザーが存在しない場合は新規作成
+    console.log("ユーザー新規作成:", email);
+    const data = {
+      "email": email,
+      "emailVisibility": false,
+      "password": "12345678",
+      "passwordConfirm": "12345678",
+      "verify": true
+    };
+    
+    const record = await pb.collection('users').create(data);
+    res.json({ status: "success", user: record });
+    
+  } catch (err) {
+    console.error("ユーザー処理エラー:", err);
+    res.status(500).json({ status: "error", message: "エラーが発生しました" });
   }
 });
 
 // ユーザーを登録するAPI
-app.post("/register-user", async (req, res) => {
+app.post("/register-user",authenticateToken, async (req, res) => {
   // 認証済みのメールアドレスを使用
-  const email = req.body.email;
+  const email = req.user.email;
 
   try {
     // メールアドレスが既に存在するかチェック
-    const checkResult = await pool.query("SELECT email FROM userlist WHERE email = $1", [email]);
+    const checkResult = await pool.query("SELECT email , icon FROM userlist WHERE email = $1", [email]);
     
     if (checkResult.rows.length > 0) {
       // 既に登録済み
-      res.json({ status: "already_exists", message: "ユーザーは既に登録されています" });
+      res.json({ status: "already_exists", message: "ユーザーは既に登録されています",icon: checkResult.rows[0].icon });
       return;
     }
 
@@ -206,9 +233,9 @@ app.post("/register-user", async (req, res) => {
 });
 
 // ツイート一覧を取得するAPI
-app.get("/tweets", async (req, res) => {
+app.get("/tweets",authenticateToken, async (req, res) => {
   // 認証済みのメールアドレスを使用
-  const email = req.query.email;
+  const email = req.user.email;
   const sortType = req.query.sort || 'toukou'; // デフォルトは投稿順
   
   try {
@@ -243,10 +270,10 @@ app.get("/tweets", async (req, res) => {
 });
 
 // メッセージを保存するAPI
-app.post("/save", async (req, res) => {
+app.post("/save", authenticateToken, async (req, res) => {
   const { message } = req.body;
   // 認証済みのメールアドレスを使用
-  const email = req.body.email;
+  const email = req.user.email;
   
   try {
     // メールアドレスからuserlistのnameとiconを取得
@@ -360,10 +387,10 @@ app.post("/save", async (req, res) => {
 });
 
 // いいねを保存するAPI
-app.post("/iine", async (req, res) => {
+app.post("/iine", authenticateToken, async (req, res) => {
   const { id } = req.body;
   // 認証済みのメールアドレスを使用
-  const email = req.body.email;
+  const email = req.user.email;
   
   try {
     // 既にいいねしているかチェック
@@ -406,8 +433,8 @@ app.post("/iine", async (req, res) => {
 });
 
 // 自分のツイート一覧を取得するAPI
-app.get("/my-tweets", async (req, res) => {
-  const email = req.query.email;
+app.get("/my-tweets", authenticateToken, async (req, res) => {
+  const email = req.user.email;
   try {
     const result = await pool.query(
       "SELECT id, icon, name, message, time, iine FROM tweetlist WHERE name = (SELECT name FROM userlist WHERE email = $1) ORDER BY id DESC",
@@ -425,7 +452,7 @@ app.get("/my-tweets", async (req, res) => {
 });
 
 // いいねしたユーザー一覧を取得するAPI
-app.get("/iine-users/:tweetId", async (req, res) => {
+app.get("/iine-users/:tweetId", authenticateToken, async (req, res) => {
   const { tweetId } = req.params;
   
   try {
@@ -449,9 +476,9 @@ app.get("/iine-users/:tweetId", async (req, res) => {
 });
 
 // ツイートを削除するAPI
-app.delete("/tweets/:id", async (req, res) => {
+app.delete("/tweets/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const email = req.query.email;
+  const email = req.user.email;
   
   try {
     // 自分のツイートかチェック

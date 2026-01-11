@@ -1,4 +1,4 @@
-import PocketBase from "https://cdn.jsdelivr.net/npm/pocketbase/+esm";
+import PocketBase from "./pb.js";
 const pb = new PocketBase(window.APP_CONFIG.POCKETBASE_URL);
 // HTMLエスケープ関数
 function escapeHtml(text) {
@@ -52,7 +52,11 @@ async function openMypage() {
         const isLoggedIn = pb.authStore.isValid;
         
         if (!isLoggedIn) {
-            alert("ログインしていません");
+            showDisplayMessage({
+                title: 'ログインが必要です',
+                message: 'マイページを表示するにはログインが必要です。<br>ログイン後、再度お試しください。',
+                showCheckbox: false
+            });
             return;
         }
                 // マイページを表示
@@ -74,12 +78,10 @@ async function openMypage() {
         const metadata = await pb.collection('users').getOne(pb.authStore.model.id);
         const email = metadata.email;
         
-        let icon = 1;
         let name = email.split('@')[0];
         
         
         // マイページのユーザー情報を更新
-        document.getElementById('mypage-icon').src = `svg/kkrn_icon_user_${icon}.svg`;
         document.getElementById('mypage-username').textContent = name;
         
         
@@ -88,7 +90,11 @@ async function openMypage() {
         
     } catch (error) {
         console.error('マイページオープンエラー:', error);
-        alert('マイページの表示に失敗しました');
+        showDisplayMessage({
+            title: 'エラーが発生しました',
+            message: 'マイページの表示に失敗しました。<br>時間をおいて再度お試しください。',
+            showCheckbox: false
+        });
     }
 }
 
@@ -115,11 +121,11 @@ async function loadMyTweets() {
     tweetContainer.innerHTML = '<div style="text-align: center; padding: 50px;"><div class="spinner" style="margin: 0 auto 20px;"></div><p style="color: #666;">読み込み中...</p></div>';
     
     try {
-        const email = pb.authStore.model.email;
 
-        const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/my-tweets?email=${encodeURIComponent(email)}`, {
+        const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/my-tweets`, {
             method: "GET",
             headers: {
+              "Authorization": `Bearer ${pb.authStore.token}`
             }
         });
         
@@ -194,6 +200,7 @@ async function toggleIineUsers(tweetId) {
         const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/iine-users/${tweetId}`, {
             method: "GET",
             headers: {
+                "Authorization": `Bearer ${pb.authStore.token}`
             }
         });
         
@@ -220,7 +227,11 @@ async function toggleIineUsers(tweetId) {
         }
     } catch (error) {
         console.error('いいねユーザー取得エラー:', error);
-        alert('いいねユーザーの取得に失敗しました');
+        showDisplayMessage({
+            title: 'エラーが発生しました',
+            message: 'いいねユーザーの取得に失敗しました。<br>時間をおいて再度お試しください。',
+            showCheckbox: false
+        });
     }
 }
 
@@ -231,24 +242,36 @@ async function deleteTweet(tweetId) {
     }
     
     try {
-        const email = pb.authStore.model.email;
-        const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/tweets/${tweetId}?email=${encodeURIComponent(email)}`, {
+        const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/tweets/${tweetId}`, {
             method: "DELETE",
             headers: {
+                "Authorization": `Bearer ${pb.authStore.token}`
             }
         });
         
         const result = await response.json();
         
         if (result.status === "success") {
-            alert('ツイートを削除しました');
+            showDisplayMessage({
+                title: 'ツイートを削除しました',
+                message: 'ツイートの削除が完了しました。',
+                showCheckbox: false
+            });
             await loadMyTweets(); // 再読み込み
         } else {
-            alert('削除に失敗しました: ' + result.message);
+            showDisplayMessage({
+                title: '削除に失敗しました',
+                message: result.message,
+                showCheckbox: false
+            });
         }
     } catch (error) {
         console.error('削除エラー:', error);
-        alert('削除中にエラーが発生しました');
+        showDisplayMessage({
+            title: '削除エラー',
+            message: '削除中にエラーが発生しました。<br>時間をおいて再度お試しください。',
+            showCheckbox: false
+        });
     }
 }
 

@@ -2,7 +2,7 @@ html,body {
     margin: 0;
     padding: 0;
     width: 100%;
-    height: 100%;
+    height: calc(100% - 98px);;
     font-family: "meiryo", sans-serif;
     font-weight: 400;
     font-style: normal;
@@ -19,7 +19,7 @@ body {
     left: 0;
     width: 100%;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 0.95);
+    background-color: #1a8cd8aa;
     justify-content: center;
     align-items: center;
     z-index: 9999;
@@ -27,12 +27,13 @@ body {
 
 .login-container {
     text-align: center;
-    color: #fff;
-    padding: 2em;
-    background-color: rgba(255, 255, 255, 0.1);
+    color: #000000;
+    padding: 1.5em;
+    background-color: rgb(255, 255, 255);
     border-radius: 10px;
     max-width: 400px;
     width: 90%;
+    margin: auto 20px;
 }
 
 .login-container h1 {
@@ -41,7 +42,6 @@ body {
 }
 
 .login-container p {
-    margin: 1em 0;
     font-size: 1.2em;
 }
 
@@ -49,6 +49,7 @@ body {
     font-size: 0.9em !important;
     color: #aaa;
     margin-top: 1em;
+    margin-bottom: 1em;
 }
 
 .success-message {
@@ -74,23 +75,28 @@ body {
     border-color: #1DA1F2;
     background-color: #fff;
 }
-
-/* メール入力フィールド */
-#otp-input {
-    width: 100%;
+.otp-input {
     padding: 12px;
+    margin: 0 2px;
+    width: 40px;
     font-size: 1em;
     border: 1px solid #ddd;
     border-radius: 5px;
-    margin-bottom: 1em;
     box-sizing: border-box;
     background-color: rgba(255, 255, 255, 0.9);
+    text-align: center;
 }
-
-#otp-input:focus {
+.otp-input:focus {
     outline: none;
     border-color: #1DA1F2;
     background-color: #fff;
+}
+.otp-input-container {
+    margin-bottom: 20px;
+}
+
+#otp-input-section {
+    display: none;
 }
 
 /* ログインボタン */
@@ -115,6 +121,10 @@ body {
     background-color: #1580c5;
 }
 
+#loading-message {
+    display: none;
+}
+
 /* メインコンテンツ */
 #main-content {
     display: none;
@@ -124,8 +134,8 @@ header {
 	position: fixed;
 	padding: 0.5em 0;
 	width: calc(100% - 2em);
-	color: #fff;
-	background-color: #000;
+	color: #000000;
+	background-color: #ffffff;
 	z-index: 5;
 	transition: transform .3s;
 	top: 0;
@@ -133,6 +143,9 @@ header {
     padding-left: 1em;
     padding-right: 1em;
     padding-bottom: 0;
+    border-bottom: 0px solid;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(239, 243, 244);
 }
 .header-top {
     width: 100%;
@@ -152,16 +165,14 @@ header {
     align-items: center;
 }
 .signout-btn {
-    background-color: #606060;
-    color: #000;
+    color: #000000;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     font-size: 0.9em;
     width: 30px;
     height: 30px;
-
-    margin: 0 0 0 5px;
+    margin-left: auto;
     display: flex;
     align-items: center;
 }
@@ -169,6 +180,8 @@ header {
     width: 80%;
     height: 80%;
     margin: 0 auto;
+    padding-top: 3px;
+    padding-right: 1px;
 }
 .myicon {
     height: 36px;
@@ -184,7 +197,7 @@ header {
 }
 
 .signout-btn:hover {
-    background-color: #b2b2b2;
+    background-color: #d5d5d5;
 }
 
 h1 {
@@ -192,6 +205,14 @@ h1 {
     font-size: 1.5em;
     text-align: center;
     width: 50%;
+}
+.login-logo {
+    width: auto;
+    height: 45px;
+}
+.logo {
+    width: auto;
+    height: 75%;
 }
 
 .header-bottom {
@@ -233,7 +254,7 @@ h1 {
 .likes.active span::after {
     content: '';
     position: absolute;
-    bottom: 0;
+    bottom: -1px;
     left: -10px;
     right: -10px;
     height: 4px;
@@ -424,6 +445,9 @@ h1 {
 }
 .cancel-btn {
 margin-left: 15px;
+}
+.cancel-btn p {
+    cursor: pointer;
 }
 textarea {
     width: 100%;
@@ -727,6 +751,7 @@ textarea {
     justify-content: center;
     align-items: center;
     z-index: 999;
+    display: none;
 }
 
 .loading-spinner {
@@ -861,4 +886,19 @@ textarea {
 
 .confirm-btn:active {
     background-color: #1580c5;
+}
+
+
+input[type="number"]::-webkit-outer-spin-button, 
+input[type="number"]::-webkit-inner-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+} 
+input[type="number"] { 
+  -moz-appearance: textfield; 
+}
+
+img {
+    user-select: none;
+    pointer-events: none;
 }

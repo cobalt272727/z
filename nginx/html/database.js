@@ -1,4 +1,4 @@
-import PocketBase from "https://cdn.jsdelivr.net/npm/pocketbase/+esm";
+import PocketBase from "./pb.js";
 const pb = new PocketBase(window.APP_CONFIG.POCKETBASE_URL);
 
 function newtweet() {
@@ -27,21 +27,34 @@ function newtweet() {
     updateCharCount();
 }
 
-// 映像表示に関する注意メッセージを表示
-function showDisplayMessage() {
+// 汎用メッセージ表示関数
+// @param {string} title - メッセージのタイトル（デフォルト: "映像表示について"）
+// @param {string} message - メッセージの本文（デフォルト: "映像に流れるのは<strong>30文字以下の投稿のみ</strong>です"）
+// @param {boolean} showCheckbox - チェックボックスを表示するか（デフォルト: true）
+// @param {string} storageKey - localStorageのキー（デフォルト: "dontShowDisplayMessage"）
+function showDisplayMessage({
+    title = '映像表示について',
+    message = '映像に流れるのは<strong>30文字以下の投稿のみ</strong>です',
+    showCheckbox = true,
+    storageKey = 'dontShowDisplayMessage'
+} = {}) {
     const overlay = document.createElement('div');
     overlay.className = 'display-message-overlay';
     
     const messageBox = document.createElement('div');
     messageBox.className = 'display-message-box';
     
-    messageBox.innerHTML = `
-        <h3>映像表示について</h3>
-        <p>映像に流れるのは<strong>30文字以下の投稿のみ</strong>です</p>
+    const checkboxHtml = showCheckbox ? `
         <div class="checkbox-container">
             <input type="checkbox" id="dont-show-again" />
             <label for="dont-show-again">このメッセージを今後表示しない</label>
         </div>
+    ` : '';
+    
+    messageBox.innerHTML = `
+        <h3>${title}</h3>
+        <p>${message}</p>
+        ${checkboxHtml}
         <button class="confirm-btn" id="confirm-display-message">OK</button>
     `;
     
@@ -50,9 +63,11 @@ function showDisplayMessage() {
     
     // OKボタンのイベントリスナー
     document.getElementById('confirm-display-message').addEventListener('click', () => {
-        const checkbox = document.getElementById('dont-show-again');
-        if (checkbox.checked) {
-            localStorage.setItem('dontShowDisplayMessage', 'true');
+        if (showCheckbox) {
+            const checkbox = document.getElementById('dont-show-again');
+            if (checkbox.checked) {
+                localStorage.setItem(storageKey, 'true');
+            }
         }
         overlay.remove();
     });
@@ -171,7 +186,11 @@ document.addEventListener("click", async (event) => {
     const isLoggedIn = pb.authStore.isValid;
     
     if (!isLoggedIn) {
-      alert("ログインしていません");
+      showDisplayMessage({
+        title: 'ログインが必要です',
+        message: 'いいねをするにはログインが必要です。<br>ログイン後、再度お試しください。',
+        showCheckbox: false
+      });
       // 元に戻す
       if (!isLiked) {
         iineIcon.innerText = "♡";
@@ -191,13 +210,13 @@ document.addEventListener("click", async (event) => {
 
     try {
       // サーバーにPOSTリクエストを送信
-      const email = pb.authStore.model.email;
       const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/iine`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${pb.authStore.token}`
         },
-        body: JSON.stringify({ id, email })
+        body: JSON.stringify({ id })
       });
 
       const result = await response.json();
@@ -217,7 +236,11 @@ document.addEventListener("click", async (event) => {
           iineNum.innerText = currentNum;
           iineBtn.setAttribute("data-liked", "true");
         }
-        alert("いいねの処理に失敗しました");
+        showDisplayMessage({
+          title: 'エラーが発生しました',
+          message: 'いいねの処理中にエラーが発生しました。<br>時間をおいて再度お試しください。',
+          showCheckbox: false
+        });
       }
     } catch (error) {
       console.error("いいねAPIエラー:", error);
@@ -233,7 +256,11 @@ document.addEventListener("click", async (event) => {
         iineNum.innerText = currentNum;
         iineBtn.setAttribute("data-liked", "true");
       }
-      alert("通信エラーが発生しました");
+      showDisplayMessage({
+        title: '通信エラーが発生しました',
+        message: '通信エラーが発生しました。<br>時間をおいて再度お試しください。',
+        showCheckbox: false
+      });
     }
   }
 });
@@ -308,15 +335,22 @@ document.getElementById("send-tweet-btn").addEventListener("click", async () => 
       
       // メッセージが空の場合は送信しない
       if (!message || message.length === 0) {
-        alert("メッセージを入力してください");
+        showDisplayMessage({
+          title: 'メッセージが空です',
+          message: 'メッセージを入力してください。',
+          showCheckbox: false
+        });
         return;
       }
       
-      // Magic.linkからログイン中のユーザー情報を取得
       const isLoggedIn = pb.authStore.isValid;
       
       if (!isLoggedIn) {
-        alert("ログインしていません");
+        showDisplayMessage({
+          title: 'ログインが必要です',
+          message: 'ツイートするにはログインが必要です。<br>ログイン後、再度お試しください。',
+          showCheckbox: false
+        });
         return;
       }
       
@@ -334,34 +368,46 @@ document.getElementById("send-tweet-btn").addEventListener("click", async () => 
       sendBtn.querySelector("p").textContent = "送信中...";
 
       try {
-        const email = pb.authStore.model.email;
         // サーバーにPOSTリクエストを送信
         const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/save`, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${pb.authStore.token}`
           },
-          body: JSON.stringify({ message, email })
+          body: JSON.stringify({ message })
         });
 
         const result = await response.json();
         
         // BANされている場合の処理
         if (response.status === 403) {
-          alert("⚠ " + result.message);
+          showDisplayMessage({
+            title: 'アクセス禁止',
+            message: result.message,
+            showCheckbox: false
+          });
           cancelTweet();
           return;
         }
         
         // 不適切なコンテンツが検出された場合の処理
         if (response.status === 400 && result.categories) {
-          alert("⚠ " + result.message + "\n\nこの投稿は不適切なコンテンツを含んでいる可能性があります。");
+          showDisplayMessage({
+            title: '不適切なコンテンツ',
+            message: result.message + "\n\nこの投稿は不適切なコンテンツを含んでいる可能性があります。",
+            showCheckbox: false
+          });
           return;
         }
         
         // エラーチェック
         if (result.status === "error") {
-          alert("エラー: " + result.message);
+          showDisplayMessage({
+            title: 'エラーが発生しました',
+            message: result.message,
+            showCheckbox: false
+          });
           return;
         }
         
@@ -372,7 +418,11 @@ document.getElementById("send-tweet-btn").addEventListener("click", async () => 
         }
       } catch (error) {
         console.error("送信エラー:", error);
-        alert("送信中にエラーが発生しました");
+        showDisplayMessage({
+          title: '送信エラー',
+          message: '送信中にエラーが発生しました。<br>時間をおいて再度お試しください。',
+          showCheckbox: false
+        });
       } finally {
         // 送信中フラグを解除
         isSending = false;
@@ -383,3 +433,5 @@ document.getElementById("send-tweet-btn").addEventListener("click", async () => 
         sendBtn.querySelector("p").textContent = originalText;
       }
     });
+
+    window.showDisplayMessage = showDisplayMessage;

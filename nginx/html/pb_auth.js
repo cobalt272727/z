@@ -1,7 +1,6 @@
-import PocketBase from "https://cdn.jsdelivr.net/npm/pocketbase/+esm";
+import PocketBase from "./pb.js";
 const pb = new PocketBase(window.APP_CONFIG.POCKETBASE_URL);
 let otpId;
-
 
 // HTMLエスケープ関数(XSS対策)
 function escapeHtml(text) {
@@ -65,7 +64,11 @@ async function checkAuthState() {
             
             // ドメインチェック
             if (!email.endsWith('@g.kumamoto-nct.ac.jp')) {
-                alert('アクセスが拒否されました。\nこのサイトは g.kumamoto-nct.ac.jp ドメインのアカウントのみアクセス可能です。');
+                showDisplayMessage({
+                    title: 'アクセス拒否',
+                    message: 'このサイトは g.kumamoto-nct.ac.jp ドメインのアカウントのみアクセス可能です。',
+                    showCheckbox: false
+                });
                 await signOut();
                 return;
             }
@@ -92,7 +95,11 @@ async function signOut() {
         showLoginScreen();
     } catch (error) {
         console.error('サインアウトエラー:', error);
-        alert('サインアウトに失敗しました: ' + error.message);
+        showDisplayMessage({
+            title: 'サインアウトエラー',
+            message: 'サインアウトに失敗しました。<br>時間をおいて再度お試しください。',
+            showCheckbox: false
+        });
     }
 }
 
@@ -103,12 +110,15 @@ async function registerUserToDatabase(email) {
         const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/register-user`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ email })
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${pb.authStore.token}`
+            }
         });
 
         const result = await response.json();
+
+        document.getElementById('mypage-icon').src = `svg/kkrn_icon_user_${result.icon}.svg`;
+        document.getElementById('go-mypage-icon').src = `svg/kkrn_icon_user_${result.icon}.svg`; 
         
         if (result.status === "success") {
             console.log('新規ユーザー登録完了:', result);
@@ -151,13 +161,13 @@ async function loadTweets(sortType = currentSort) {
             showLoginScreen();
             return;
         }
-        const email = pb.authStore.model.email;
         // ソートパラメータをクエリストリングに追加
         const sortParam = sortType === 'likes' ? '?sort=likes' : '?sort=toukou';
-        const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/tweets${sortParam}&email=${encodeURIComponent(email)}`, {
+        const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/tweets${sortParam}`, {
             method: "GET",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${pb.authStore.token}`
             }
             // GET/HEADリクエストではbodyを含めない
         });
@@ -227,7 +237,6 @@ function showLoginScreen() {
     document.getElementById('login-overlay').style.display = 'flex';
     document.getElementById('main-content').style.display = 'none';
     document.getElementById('email-input-section').style.display = 'block';
-    document.getElementById('link-sent-message').style.display = 'none';
     document.getElementById('loading-message').style.display = 'none';
 }
 // ログイン画面を非表示
@@ -240,18 +249,18 @@ function hideLoginScreen() {
 }
 // メールリンクを送信
 async function sendLoginLink() {
-    const email = document.getElementById('email-input').value;
+    var email = document.getElementById('email-input').value.trim();
     
     if (!email) {
-        alert('メールアドレスを入力してください。');
+        showDisplayMessage({
+            title: '入力エラー',
+            message: 'ユーザーIDを入力してください。',
+            showCheckbox: false
+        });
         return;
     }
     
-    // ドメインチェック
-    if (!email.endsWith('@g.kumamoto-nct.ac.jp')) {
-        alert('このサイトは g.kumamoto-nct.ac.jp ドメインのアカウントのみアクセス可能です。');
-        return;
-    }
+    email = email + '@g.kumamoto-nct.ac.jp';
     
     try{
             const response = await fetch(`${window.APP_CONFIG.API_BASE_URL}/user-create`, {
@@ -263,7 +272,11 @@ async function sendLoginLink() {
         });
     } catch (error) {
         console.error('ログイン前処理エラー:', error);
-        alert('ログイン処理に失敗しました: ' + error.message);
+        showDisplayMessage({
+            title: 'ログインエラー',
+            message: 'ログイン処理に失敗しました。<br>時間をおいて再度お試しください。',
+            showCheckbox: false
+        });
         return; 
     }
 
@@ -285,15 +298,74 @@ async function sendLoginLink() {
         document.getElementById('email-input-section').style.display = 'block';
         
         console.error('ログインエラー:', error);
-        alert('OTPの送信に失敗しました: ' + error.message);
+        showDisplayMessage({
+            title: 'ログインエラー',
+            message: 'OTPの送信に失敗しました。<br>時間をおいて再度お試しください。',
+            showCheckbox: false
+        });
     }
 }
+// OTP入力ボックスの自動フォーカス機能を初期化
+function initOtpInputs() {
+    const otpInputs = document.querySelectorAll('.otp-input');
+    
+    otpInputs.forEach((input, index) => {
+        // 入力時のイベント
+        input.addEventListener('input', (e) => {
+            const value = e.target.value;
+            
+            // 1文字入力されたら次のボックスにフォーカス
+            if (value.length === 1 && index < otpInputs.length - 1) {
+                otpInputs[index + 1].focus();
+            }
+        });
+        
+        // キーダウンイベント（削除キー対応）
+        input.addEventListener('keydown', (e) => {
+            // Backspaceキーが押され、現在のボックスが空の場合
+            if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+                e.preventDefault();
+                const prevInput = otpInputs[index - 1];
+                prevInput.focus();
+                // カーソルを最後尾に移動
+                setTimeout(() => {
+                    prevInput.setSelectionRange(prevInput.value.length, prevInput.value.length);
+                }, 0);
+            }
+        });
+        
+        // ペースト対応
+        input.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pasteData = e.clipboardData.getData('text').replace(/\D/g, ''); // 数字のみ抽出
+            
+            // 各ボックスに1文字ずつ入力
+            for (let i = 0; i < pasteData.length && index + i < otpInputs.length; i++) {
+                otpInputs[index + i].value = pasteData[i];
+            }
+            
+            // 最後に入力されたボックスの次にフォーカス
+            const lastFilledIndex = Math.min(index + pasteData.length, otpInputs.length - 1);
+            otpInputs[lastFilledIndex].focus();
+        });
+    });
+}
+
 // OTPを検証してログイン
 async function verifyOtp() {
     try {
         document.getElementById('loading-message').style.display = 'block';
         document.getElementById('otp-input-section').style.display = 'none';
-        const otp = document.getElementById('otp-input').value;
+        
+        // 6つのOTP入力ボックスから値を取得
+        const otpDigits = [];
+        for (let i = 1; i <= 6; i++) {
+            const digit = document.getElementById(`otp-digit-${i}`).value;
+            otpDigits.push(digit);
+            document.getElementById(`otp-digit-${i}`).value = ''; // 入力後にクリア
+        }
+        const otp = otpDigits.join('');
+        
         await pb.collection('users').authWithOTP(
             otpId,
             otp,
@@ -306,13 +378,17 @@ async function verifyOtp() {
         hideLoginScreen();
         loadTweets('toukou'); // デフォルトで投稿順に読み込み
 
-        console.log('ログイン成功:', pb.authStore);
+        console.log('ログイン成功:', email);
 
     } catch (error) {
         document.getElementById('loading-message').style.display = 'none';
         document.getElementById('email-input-section').style.display = 'block';
         console.error('OTP検証エラー:', error);
-        alert('OTPの検証に失敗しました: ' + error.message);
+        showDisplayMessage({
+            title: 'ログインエラー',
+            message: 'OTPの検証に失敗しました。<br>時間をおいて再度お試しください。',
+            showCheckbox: false
+        });
         return;
     }
 }
@@ -328,6 +404,9 @@ window.addEventListener('load', async function() {
     if (signOutBtn) {
         signOutBtn.addEventListener('click', signOut);
     }
+    
+    // OTP入力ボックスの自動フォーカス機能を初期化
+    initOtpInputs();
     
     // ログインボタンのイベントリスナー
     const sendLinkBtn = document.getElementById('send-link-btn');

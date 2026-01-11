@@ -34,3 +34,5 @@ build/
 config.js
 
 test/
+pb_data/
+*.pem

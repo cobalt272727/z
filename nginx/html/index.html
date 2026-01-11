@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>z.com</title>
+    <title>Twitter</title>
     <link rel="stylesheet" href="styles.css">
     <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Cache-Control" content="no-cache"> 
@@ -12,27 +12,30 @@
     <!-- ログイン画面オーバーレイ -->
     <div id="login-overlay">
         <div class="login-container">
-            <h1>z</h1>
+            <img src="svg/Logo_of_Twitter.svg" class="login-logo" alt="Twitter Logo">
             
             <div id="email-input-section">
-                <p>メールアドレスでログイン</p>
-                <input type="email" id="email-input" placeholder="メールアドレスを入力" />
+                <p>ユーザーIDでログイン</p>
+                <input type="text" id="email-input" placeholder="ユーザーIDを入力" />
                 <button id="send-link-btn" class="auth-btn">ログインコードを送信</button>
-                <p class="login-note">※ g.kumamoto-nct.ac.jp ドメインのメールアドレスのみ利用可能です</p>
+                <p class="login-note">※各学生に割り振られているIDを入力してください<br>例「te00tanaka」</p>
             </div>
-            <div id="otp-input-section" style="display: none;">
+
+            <div id="otp-input-section">
                 <p>ログインコードを入力</p>
-                <input type="text" id="otp-input" placeholder="ログインコードを入力" maxlength="6"/>
+                <div class="otp-input-container">
+                    <input type="number" class="otp-input" id="otp-digit-1" min="0" max="9" oninput="javascript: this.value = this.value.slice(0, 1);" />
+                    <input type="number" class="otp-input" id="otp-digit-2" min="0" max="9" oninput="javascript: this.value = this.value.slice(0, 1);" />
+                    <input type="number" class="otp-input" id="otp-digit-3" min="0" max="9" oninput="javascript: this.value = this.value.slice(0, 1);" />
+                    <input type="number" class="otp-input" id="otp-digit-4" min="0" max="9" oninput="javascript: this.value = this.value.slice(0, 1);" />
+                    <input type="number" class="otp-input" id="otp-digit-5" min="0" max="9" oninput="javascript: this.value = this.value.slice(0, 1);" />
+                    <input type="number" class="otp-input" id="otp-digit-6" min="0" max="9" oninput="javascript: this.value = this.value.slice(0, 1);" />
+                </div>
+                <p class="login-note">※メールが届かない場合は、迷惑メールフォルダもご確認ください。</p>
                 <button id="verify-otp-btn" class="auth-btn">ログイン</button>
             </div>
-            
-            <div id="link-sent-message" style="display: none;">
-                <p class="success-message">✓ ログイン処理中</p>
-                <p>メールをご確認の上、リンクをクリックしてログインしてください。</p>
-                <p class="login-note">メールが届かない場合は、迷惑メールフォルダもご確認ください。</p>
-            </div>
-            
-            <div id="loading-message" style="display: none;">
+        
+            <div id="loading-message">
                 <p>処理中...</p>
             </div>
         </div>
@@ -41,16 +44,16 @@
     <!-- メインコンテンツ -->
     <div id="main-content">
         <header id="header" >
-
             <div class="header-top">
-        <div class="hleft"></div>
-            <h1>z</h1>
-            <div class="hright">
+        <div class="hleft">
                 <div class="myicon" id="gomypage">
-                    <img src="svg/kkrn_icon_user_1.svg" alt="User Icon" />
+                    <img id="go-mypage-icon" src="svg/kkrn_icon_user_1.svg" alt="User Icon" />
                 </div>
+        </div>
+            <img src="svg/Logo_of_Twitter.svg" class="logo" alt="Twitter Logo">
+            <div class="hright">
                 <div id="signout-btn" class="signout-btn">
-                    <img src="svg/logout_white.svg" alt="Logout" />
+                    <img src="svg/logout_black.svg" alt="Logout" />
                 </div>
             </div>
         </div>
@@ -62,7 +65,7 @@
         </header>
         
         <!-- ローディングアニメーション -->
-        <div class="loading-overlay" id="loading-overlay" style="display: none;">
+        <div class="loading-overlay" id="loading-overlay">
             <div class="loading-spinner">
                 <div class="spinner"></div>
                 <p>読み込み中...</p>
